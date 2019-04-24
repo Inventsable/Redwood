@@ -6,6 +6,8 @@ Long overdue rebuild of [mightyFolders](https://github.com/Inventsable/mightyFol
 
 ## To-do:
 
+* ~~Expandable, nestable list~~
+* ~~Dynamic search bar~~
 * Dynamic creation of root folder treeview
 * Unlimited instances of trees
 * Global selection mechanic for navigation between trees

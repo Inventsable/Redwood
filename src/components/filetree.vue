@@ -22,10 +22,12 @@
             :items="items"
             activatable
             item-key="name"
+            item-text="name"
             open-on-click
-            :return-object="true"
+            return-object
             :search="search"
             :filter="filter"
+            
         >
             <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
             <template v-slot:prepend="{ item, open }">
@@ -187,7 +189,14 @@ export default {
             console.log(`Path to ${path}`)
             let folder = window.cep.fs.readdir(path);
             console.log(folder.data);
-            console.log(this.tree);
+            // console.log(this.tree);
+            console.log(this.active);
+            this.buildTree();
+        },
+        buildTree() {
+            console.log(this.items)
+            let branches = document.querySelectorAll('.v-treeview-node');
+            console.log(branches)
         }
     }
 }
