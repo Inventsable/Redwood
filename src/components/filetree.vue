@@ -1,7 +1,20 @@
 <template>
-    <v-container id="treemenu" class="pl-1" :style="getTreeStyle()">
+    <v-container id="tree" class="pl-1" :style="getTreeStyle()">
+        <v-text-field
+            prepend-inner-icon="search"
+            v-model="search"
+            class="pa-3"
+            label="Search"
+            dark
+            flat
+            solo-inverted
+            hide-details
+            clearable
+            clear-icon="mdi-close-circle-outline"
+        ></v-text-field>
         <v-divider class="pb-2"></v-divider>
         <v-treeview
+            id="treemenu"
             v-model="tree"
             :open="open"
             :active="active"
@@ -10,13 +23,17 @@
             activatable
             item-key="name"
             open-on-click
+            :return-object="true"
+            :search="search"
+            :filter="filter"
         >
-            <template slot="prepend" slot-scope="{ item, open }">
-                <v-icon v-if="!item.file" class="pl-2">
+            <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
+            <template v-slot:prepend="{ item, open }">
+                <v-icon v-if="!item.ext" class="pl-2">
                     {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
                 </v-icon>
                 <v-icon v-else >
-                    {{ files[item.file] }}
+                    {{ extIcons[item.ext] }}
                 </v-icon>
             </template>
         </v-treeview>
@@ -34,7 +51,9 @@ export default {
         valid: false,
         open: ['Root', 'public', 'static'],
         active: ['logo.png'],
-        files: {
+        caseSensitive: false,
+        search: null,
+        extIcons: {
             html: 'mdi-language-html5',
             js: 'mdi-nodejs',
             json: 'mdi-json',
@@ -48,58 +67,86 @@ export default {
         items: [
             {
                 name: 'Root',
+                elt: null,
+                active: false,
                 children: [
                     {
-                        name: '.git'
+                        name: '.git',
+                        elt: null,
+                        active: false,
                     },
                     {
-                        name: 'node_modules'
+                        name: 'node_modules',
+                        elt: null,
+                        active: false,
                     },
                     {
                         name: 'public',
+                        elt: null,
+                        active: false,
                         children: [
                             {
                                 name: 'static',
+                                elt: null,
+                                active: false,
                                 children: [
                                     {
                                         name: 'logo.png',
-                                        file: 'png'
+                                        elt: null,
+                                        active: false,
+                                        ext: 'png'
                                     }
                                 ]
                             },
                             {
                                 name: 'favicon.ico',
-                                file: 'png'
+                                elt: null,
+                                active: false,
+                                ext: 'png'
                             },
                             {
                                 name: 'index.html',
-                                file: 'html'
+                                elt: null,
+                                active: false,
+                                ext: 'html'
                             }
                         ]
                     },
                     {
                         name: '.gitignore',
-                        file: 'txt'
+                        elt: null,
+                        active: false,
+                        ext: 'txt'
                     },
                     {
                         name: 'babel.config.js',
-                        file: 'js'
+                        elt: null,
+                        active: false,
+                        ext: 'js'
                     },
                     {
                         name: 'package.json',
-                        file: 'json'
+                        elt: null,
+                        active: false,
+                        ext: 'json'
                     },
                     {
                         name: 'README.md',
-                        file: 'md'
+                        elt: null,
+                        active: false,
+                        ext: 'md'
                     },
                     {
                         name: 'vue.config.js',
-                        file: 'js'
+                        elt: null,
+                        active: false,
+                        ext: 'js'
                     },
                     {
                         name: 'yarn.lock',
-                        file: 'txt'
+                        elt: null,
+                        active: false,
+                        ext: 'txt'
                     }
                 ]
             }
@@ -114,7 +161,13 @@ export default {
     computed: {
         app() {
             return this.$root.$children[0];
-        }
+        },
+        filter () {
+            return this.caseSensitive
+            ? (item, search, textKey) => item[textKey].indexOf(search) > -1
+            : undefined
+            // return (item, search, textKey) => item[textKey].indexOf(search) > -1
+        },
     },
     mounted() {
         console.log('Mounted');
@@ -133,7 +186,8 @@ export default {
         readDir(path) {
             console.log(`Path to ${path}`)
             let folder = window.cep.fs.readdir(path);
-            console.log(folder)
+            console.log(folder.data);
+            console.log(this.tree);
         }
     }
 }
@@ -149,6 +203,18 @@ export default {
     font-size: 14px;
 }
 
+#tree .v-input__slot, #tree .v-input__control {
+    min-height: 0px;
+}
+
+#searchBar {
+    border: 2px solid red;
+}
+
+#searchBar .v-input__slot {
+    min-height: 0px;
+}
+
 .v-treeview-node__label {
     color: var(--color-main);
     font-size: 1rem;
@@ -160,8 +226,21 @@ export default {
 }
 
 .v-treeview-node__root {
-  height: 28px;
-  min-height: 0px;
-  padding-left: 6px;
+    height: 28px;
+    min-height: 0px;
+    padding-left: 6px;
 }
+
+.theme--dark.v-text-field--solo-inverted.v-text-field--solo > .v-input__control > .v-input__slot {
+    background-color: var(--color-input-idle);
+    border: 1.35px solid var(--color-border);
+    border-radius: 20px;
+}
+
+.theme--dark.v-text-field--solo-inverted.v-text-field--solo.v-input--is-focused > .v-input__control > .v-input__slot {
+    border: 1.35px solid var(--color-selection);
+    border-radius: 20px;
+}
+
+
 </style>

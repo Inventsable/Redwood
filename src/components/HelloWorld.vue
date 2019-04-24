@@ -1,7 +1,6 @@
 <template>
   <div class="pt-3">
-    <inputout class="pb-3" ref="input" v-if="isMounted"/>
-    
+    <inputout ref="input" v-if="isMounted"/>
     <filetree />
   </div>
 </template>

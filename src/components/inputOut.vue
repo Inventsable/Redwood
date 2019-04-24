@@ -130,4 +130,10 @@ export default {
 #output .v-icon {
     /* font-size: 22px; */
 }
+
+#output {
+    min-height: 72px;
+}
+
+
 </style>

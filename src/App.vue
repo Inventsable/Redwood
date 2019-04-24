@@ -122,6 +122,15 @@ export default {
   --color-disabled: #525252;
   --color-hover: rgba(255,255,225,.2);
   --color-main: #b7b7b7;
+
+  --color-icon: #a1a1a1;
+  --color-border: #3e3e3e;
+  --color-text-active: #1b1b1b;
+  --color-text-default: #a1a1a1;
+  --color-text-disabled: #525252;
+  --color-input-focus: #fcfcfc;
+  --color-input-idle: #262626;
+
   --color-scrollbar: #2a2a2a;
   --color-scrollbar-thumb: #3e3e3e;
   --color-scrollbar-thumb-hover: #525252;
