@@ -1,29 +1,14 @@
-# redwood
+# Redwood
 
-## Project setup
-```
-npm install
-```
+Long overdue rebuild of [mightyFolders](https://github.com/Inventsable/mightyFolders) with plans for real-time file syncing, contextual actions and keyboard navigation:
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+![](https://thumbs.gfycat.com/AncientAnyCollie-size_restricted.gif)
 
-### Compiles and minifies for production
-```
-npm run build
-```
+## To-do:
 
-### Run your tests
-```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+* Dynamic creation of root folder treeview
+* Unlimited instances of trees
+* Global selection mechanic for navigation between trees
+* Global key detection
+* Contextual import, export, save and open actions
+* SETTINGS: Custom ignore filter (`hidden`, `.git`, regex)

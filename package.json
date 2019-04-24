@@ -7,14 +7,22 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
+    "@mdi/font": "^3.6.95",
     "core-js": "^2.6.5",
+    "lottie-web": "^5.5.2",
+    "types-for-adobe": "github:pravdomil/types-for-adobe",
     "vue": "^2.6.10",
-    "vue-router": "^3.0.3"
+    "vue-router": "^3.0.3",
+    "vuetify": "^1.5.5"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.6.0",
     "@vue/cli-service": "^3.6.0",
-    "vue-template-compiler": "^2.5.21"
+    "stylus": "^0.54.5",
+    "stylus-loader": "^3.0.1",
+    "vue-cli-plugin-vuetify": "^0.5.0",
+    "vue-template-compiler": "^2.5.21",
+    "vuetify-loader": "^1.0.5"
   },
   "postcss": {
     "plugins": {
