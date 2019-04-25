@@ -14,3 +14,5 @@ Long overdue rebuild of [mightyFolders](https://github.com/Inventsable/mightyFol
 * Global key detection
 * Contextual import, export, save and open actions
 * SETTINGS: Custom ignore filter (`hidden`, `.git`, regex)
+
+

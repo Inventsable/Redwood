@@ -31,8 +31,8 @@
         >
             <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
             <template v-slot:prepend="{ item, open }">
-                <v-icon v-if="!item.ext" class="pl-2">
-                    {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                <v-icon v-if="!item.ext" :class="item.children.length ? 'pl-2' : ''">
+                    {{ item.children.length ? open ? 'mdi-folder-open' : 'mdi-folder' : 'mdi-folder-outline' }}
                 </v-icon>
                 <v-icon v-else >
                     {{ extIcons[item.ext] }}
@@ -51,108 +51,132 @@ export default {
     name: 'filetree',
     data: () => ({
         valid: false,
-        open: ['Root', 'public', 'static'],
-        active: ['logo.png'],
+        open: [],
+        active: [],
         caseSensitive: false,
+        ignores: [
+            '.git', 
+            'Adobe After Effects Auto-Save'
+        ],
         search: null,
+        rx: {
+            fileExt: /\.[\w]*$/,
+            lastFolder: /\/[^\/]*(\/)?$/,
+        },
         extIcons: {
             html: 'mdi-language-html5',
             js: 'mdi-nodejs',
+            gitignore: 'mdi-file-cancel',
+            ai: 'mdi-file-image',
+            ico: 'mdi-file-image',
+            gif: 'mdi-file-video',
+            psd: 'mdi-file-image',
+            aep: 'mdi-file-video',
+            prproj: 'mdi-file-video',
             json: 'mdi-json',
+            babelrc: 'mdi-nodejs',
+            eslintignore: 'mdi-nodejs',
+            editorconfig: 'mdi-nodejs',
+            css: 'mdi-language-css3',
             md: 'mdi-markdown',
             pdf: 'mdi-file-pdf',
             png: 'mdi-file-image',
             txt: 'mdi-file-document-outline',
-            xls: 'mdi-file-excel'
+            xls: 'mdi-file-excel',
+            pkf: 'mdi-file-music',
+            wav: 'mdi-file-music',
+            mp3: 'mdi-file-music',
+            sesx: 'mdi-file-music',
         },
         tree: [],
-        items: [
-            {
-                name: 'Root',
-                elt: null,
-                active: false,
-                children: [
-                    {
-                        name: '.git',
-                        elt: null,
-                        active: false,
-                    },
-                    {
-                        name: 'node_modules',
-                        elt: null,
-                        active: false,
-                    },
-                    {
-                        name: 'public',
-                        elt: null,
-                        active: false,
-                        children: [
-                            {
-                                name: 'static',
-                                elt: null,
-                                active: false,
-                                children: [
-                                    {
-                                        name: 'logo.png',
-                                        elt: null,
-                                        active: false,
-                                        ext: 'png'
-                                    }
-                                ]
-                            },
-                            {
-                                name: 'favicon.ico',
-                                elt: null,
-                                active: false,
-                                ext: 'png'
-                            },
-                            {
-                                name: 'index.html',
-                                elt: null,
-                                active: false,
-                                ext: 'html'
-                            }
-                        ]
-                    },
-                    {
-                        name: '.gitignore',
-                        elt: null,
-                        active: false,
-                        ext: 'txt'
-                    },
-                    {
-                        name: 'babel.config.js',
-                        elt: null,
-                        active: false,
-                        ext: 'js'
-                    },
-                    {
-                        name: 'package.json',
-                        elt: null,
-                        active: false,
-                        ext: 'json'
-                    },
-                    {
-                        name: 'README.md',
-                        elt: null,
-                        active: false,
-                        ext: 'md'
-                    },
-                    {
-                        name: 'vue.config.js',
-                        elt: null,
-                        active: false,
-                        ext: 'js'
-                    },
-                    {
-                        name: 'yarn.lock',
-                        elt: null,
-                        active: false,
-                        ext: 'txt'
-                    }
-                ]
-            }
-        ]
+        items: [],
+        // fake: [
+        //     {
+        //         name: 'Root',
+        //         elt: null,
+        //         active: false,
+        //         children: [
+        //             {
+        //                 name: '.git',
+        //                 elt: null,
+        //                 active: false,
+        //             },
+        //             {
+        //                 name: 'node_modules',
+        //                 elt: null,
+        //                 active: false,
+        //             },
+        //             {
+        //                 name: 'public',
+        //                 elt: null,
+        //                 active: false,
+        //                 children: [
+        //                     {
+        //                         name: 'static',
+        //                         elt: null,
+        //                         active: false,
+        //                         children: [
+        //                             {
+        //                                 name: 'logo.png',
+        //                                 elt: null,
+        //                                 active: false,
+        //                                 ext: 'png'
+        //                             }
+        //                         ]
+        //                     },
+        //                     {
+        //                         name: 'favicon.ico',
+        //                         elt: null,
+        //                         active: false,
+        //                         ext: 'png'
+        //                     },
+        //                     {
+        //                         name: 'index.html',
+        //                         elt: null,
+        //                         active: false,
+        //                         ext: 'html'
+        //                     }
+        //                 ]
+        //             },
+        //             {
+        //                 name: '.gitignore',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'txt'
+        //             },
+        //             {
+        //                 name: 'babel.config.js',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'js'
+        //             },
+        //             {
+        //                 name: 'package.json',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'json'
+        //             },
+        //             {
+        //                 name: 'README.md',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'md'
+        //             },
+        //             {
+        //                 name: 'vue.config.js',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'js'
+        //             },
+        //             {
+        //                 name: 'yarn.lock',
+        //                 elt: null,
+        //                 active: false,
+        //                 ext: 'txt'
+        //             }
+        //         ]
+        //     }
+        // ]
     }),
     watch: {
         valid(state) {
@@ -164,12 +188,14 @@ export default {
         app() {
             return this.$root.$children[0];
         },
-        filter () {
+        filter() {
             return this.caseSensitive
             ? (item, search, textKey) => item[textKey].indexOf(search) > -1
             : undefined
-            // return (item, search, textKey) => item[textKey].indexOf(search) > -1
         },
+        branches() {
+            return document.querySelectorAll('.v-treeview-node');
+        }
     },
     mounted() {
         console.log('Mounted');
@@ -187,13 +213,62 @@ export default {
         },
         readDir(path) {
             console.log(`Path to ${path}`)
+            const self = this;
             let folder = window.cep.fs.readdir(path);
-            console.log(folder.data);
-            // console.log(this.tree);
-            console.log(this.active);
-            this.buildTree();
+            if (!folder.err)
+                this.items.push(
+                    {
+                        name: path.match(self.rx.lastFolder)[0].split('\/').join(''),
+                        children: self.buildTreeForDisplay(folder.data, [], path),
+                        active: false,
+                        elt: null,
+                    },
+                );
+            else
+                console.log(`Error #${folder.err}`)
         },
-        buildTree() {
+        buildTreeBranch(data, master, rootpath) {
+
+        },
+        buildTreeForDisplay(data, master, rootpath) {
+            console.log(`Master has ${master.length}`)
+            console.log(`Root path is ${rootpath}`)
+            console.log(data);
+            let mirror = [];
+            data.forEach(entry => {
+                if (!this.ignores.includes(entry)) {
+                    // let name;
+                    // if (/\s/.test(entry))
+                    //     name = entry.split(' ').join('\_')
+                    // else
+                    //     name = entry;
+                    let result = {
+                        name: entry,
+                        elt: null,
+                        active: false,
+                    };
+                    if (!window.cep.fs.readdir(rootpath + entry).err) {
+                        result.children = this.buildTreeForDisplay(window.cep.fs.readdir(rootpath + entry).data, mirror, rootpath + entry)
+                    } else {
+                        // if (/adobe\safter\seffects\sauto\-save/i.test(entry)) {
+                        //     let checker = window.cep.fs.readdir(rootpath + entry);
+                        // }
+                        if (this.rx.fileExt.test(entry))
+                            result.ext = entry.match(this.rx.fileExt)[0].replace('\.', '');
+                        else
+                            console.log(`!!!!!! File ext not found in ${entry}`)
+                        
+                    }
+    
+                    mirror.push(result);
+                }
+            })
+            console.log(mirror);
+            return mirror;
+        },
+        buildEltForSelection() {
+            console.log('Build selection');
+            // Could scan for open via clientHeight, and label via innerText
             console.log(this.items)
             let branches = document.querySelectorAll('.v-treeview-node');
             console.log(branches)

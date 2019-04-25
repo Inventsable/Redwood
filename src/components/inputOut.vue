@@ -70,8 +70,7 @@ export default {
   mounted() {
         if (this.app.storage.getItem('output'))
             this.output = this.app.storage.getItem('output');
-        console.log(this.output);
-
+        // console.log(this.output);
         this.isMounted = true;
         this.app.input = this;
   },
