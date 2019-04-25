@@ -35,7 +35,7 @@
                     {{ item.children.length ? open ? 'mdi-folder-open' : 'mdi-folder' : 'mdi-folder-outline' }}
                 </v-icon>
                 <v-icon v-else >
-                    {{ extIcons[item.ext] }}
+                    {{ supportedExts.includes(item.ext) ? extIcons[item.ext] : extIcons.unknown }}
                 </v-icon>
             </template>
         </v-treeview>
@@ -54,19 +54,61 @@ export default {
         open: [],
         active: [],
         caseSensitive: false,
+        fsError: [
+            'NO_ERROR','ERR_UNKNOWN','ERR_INVALID_PARAMS','ERR_NOT_FOUND','ERR_CANT_READ','ERR_UNSUPPORTED_ENCODING','ERR_CANT_WRITE','ERR_OUT_OF_SPACE','ERR_NOT_FILE','ERR_NOT_DIRECTORY','ERR_FILE_EXISTS'
+        ],
         ignores: [
             '.git', 
-            'Adobe After Effects Auto-Save'
+            'Adobe After Effects Auto-Save',
+            'node_modules'
         ],
         search: null,
         rx: {
             fileExt: /\.[\w]*$/,
             lastFolder: /\/[^\/]*(\/)?$/,
         },
+        supportedExts: [
+            'html',
+            'js',
+            'jsx',
+            'gitignore',
+            'ai',
+            'ico',
+            'gif',
+            'psd',
+            'aep',
+            'prproj',
+            'json',
+            'babelrc',
+            'eslintignore',
+            'editorconfig',
+            'css',
+            'md',
+            'pdf',
+            'png',
+            'txt',
+            'xls',
+            'pkf',
+            'wav',
+            'mp3',
+            'ssml',
+            'vue',
+            'xml',
+            'debug',
+            'nojekyll',
+            'ts',
+            'sesx',
+            'npmignore',
+            'browserslistrc',
+            'yml',
+        ],
         extIcons: {
+            unknown: 'mdi-file-question',
             html: 'mdi-language-html5',
+            jsx: 'mdi-nodejs',
             js: 'mdi-nodejs',
             gitignore: 'mdi-file-cancel',
+            debug: 'mdi-file-search',
             ai: 'mdi-file-image',
             ico: 'mdi-file-image',
             gif: 'mdi-file-video',
@@ -79,6 +121,7 @@ export default {
             editorconfig: 'mdi-nodejs',
             css: 'mdi-language-css3',
             md: 'mdi-markdown',
+            xml: 'mdi-json',
             pdf: 'mdi-file-pdf',
             png: 'mdi-file-image',
             txt: 'mdi-file-document-outline',
@@ -86,7 +129,14 @@ export default {
             pkf: 'mdi-file-music',
             wav: 'mdi-file-music',
             mp3: 'mdi-file-music',
+            vue: 'mdi-vuejs',
+            nojekyll: 'mdi-file-nodejs',
+            ts: 'mdi-language-typescript',
             sesx: 'mdi-file-music',
+            ssml: 'mdi-file-music',
+            npmignore: 'mdi-file-cancel',
+            browserslistrc: 'mdi-web',
+            yml: 'mdi-web',
         },
         tree: [],
         items: [],
@@ -200,6 +250,7 @@ export default {
     mounted() {
         console.log('Mounted');
         this.app.treemenu = this;
+
     },
     methods: {
         filewalker(dir, done) {
@@ -253,10 +304,18 @@ export default {
                         // if (/adobe\safter\seffects\sauto\-save/i.test(entry)) {
                         //     let checker = window.cep.fs.readdir(rootpath + entry);
                         // }
-                        if (this.rx.fileExt.test(entry))
+                        if (this.rx.fileExt.test(entry)) {
                             result.ext = entry.match(this.rx.fileExt)[0].replace('\.', '');
-                        else
-                            console.log(`!!!!!! File ext not found in ${entry}`)
+
+                        } else {
+                            console.log(`${entry} is probably a folder:`)
+                            let errorMsg = this.fsError[window.cep.fs.readdir(rootpath + entry).err];
+                            if (!/\/$/.test(rootpath)) {
+                                result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`)
+                            }
+                            console.log(`${rootpath + entry} ? ${errorMsg}`)
+
+                        }
                         
                     }
     
