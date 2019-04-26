@@ -16,12 +16,13 @@
         <v-treeview
             id="treemenu"
             v-model="tree"
-            :open="open"
-            :active="active"
+            :open.sync="open"
+            :active.sync="active"
             active-class="tree-active"
             :items="items"
             activatable
             item-key="name"
+            @update:active="updateActiveBranches()"
             item-text="name"
             open-on-click
             return-object
@@ -31,12 +32,26 @@
         >
             <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
             <template v-slot:prepend="{ item, open }">
-                <v-icon v-if="!item.ext" :class="item.children.length ? 'pl-2' : ''">
+                <v-icon v-if="!item.ext" :class="item.children.length ? 'pl-2' : ''"  >
                     {{ item.children.length ? open ? 'mdi-folder-open' : 'mdi-folder' : 'mdi-folder-outline' }}
                 </v-icon>
-                <v-icon v-else >
+                <v-icon v-else>
                     {{ supportedExts.includes(item.ext) ? extIcons[item.ext] : extIcons.unknown }}
                 </v-icon>
+            </template>
+            <!-- <template v-slot:label="{ item, open }">
+                <div style="cursor:pointer;">
+                    {{item.name}}
+                </div>
+            </template> -->
+            <template v-slot:append="{ item, open }" >
+                <div class="pr-4">
+                    <v-btn icon @click.stop @click="checkItem(item)">
+                        <v-icon>
+                            save
+                        </v-icon>
+                    </v-btn>
+                </div>
             </template>
         </v-treeview>
         <v-divider class="my-2"></v-divider>
@@ -140,6 +155,7 @@ export default {
         },
         tree: [],
         items: [],
+        branches: [],
         // fake: [
         //     {
         //         name: 'Root',
@@ -232,6 +248,18 @@ export default {
         valid(state) {
             if (state)
                 this.readDir(this.app.input.realoutput)
+        },
+        open(list) {
+            console.log(`Open is ${this.open.length} ? ${this.autobranches.length}`)
+            if (this.open.length !== this.branches.length) {
+                setTimeout(() => {
+                    this.buildMissingElts();
+                }, 50);
+            }
+        },
+        active(list) {
+            console.log('Active is now:')
+            console.log(list)
         }
     },
     computed: {
@@ -243,7 +271,7 @@ export default {
             ? (item, search, textKey) => item[textKey].indexOf(search) > -1
             : undefined
         },
-        branches() {
+        autobranches() {
             return document.querySelectorAll('.v-treeview-node');
         }
     },
@@ -253,6 +281,75 @@ export default {
 
     },
     methods: {
+        buildMissingElts() {
+            console.log('Build missing elts');
+            // Could scan for open via clientHeight, and label via innerText
+            console.log(this.tree);
+            console.log(this.open);
+            console.log(this.items);
+            let branches = document.querySelectorAll('.v-treeview-node');
+            console.log(`${branches.length} are visible`)
+            const self = this;
+            let mirror = []
+            branches.forEach(elt => {
+                let name = elt.innerText.match(/[^\s]*/)[0], parentName = null, gParentName = null, ggParentName = null;
+                if (elt.parentElement.classList.contains('v-treeview-node__children')) {
+                    parentName = elt.parentElement.parentElement.children[0].children[1].children[1].innerText;
+                    if (!elt.parentElement.parentElement.parentElement.classList.contains('v-treeview')) {
+                        gParentName = elt.parentElement.parentElement.parentElement.parentElement.children[0].children[1].children[1].innerText;
+                        if (!elt.parentElement.parentElement.parentElement.parentElement.parentElement.classList.contains('v-treeview')) {
+                            ggParentName = elt.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.children[0].children[1].children[1].innerText;
+                        }
+                    }
+                    // console.log();
+                }
+                mirror.push(self.findInTree(ggParentName, gParentName, parentName, name, this.items));
+            })
+        },
+        findInTree(ggParentName, gParentName, parentName, name, list) {
+            let branches = document.querySelectorAll('.v-treeview-node');
+            list.forEach(item => {
+                if (ggParentName) {
+
+                } else if (gParentName) {
+                    if (item.name == gParentName) {
+                        item.children.forEach(child => {
+                            if (child.children && child.children.length) {
+                                child.children.forEach(grandchild => {
+                                    if (grandchild.name == name) {
+                                        console.log(`Found granchild ${name} at ${child.depth}:${child.index}`);
+                                        return child;
+                                    }
+                                })
+                            }
+                        })
+                    } else if (item.children) {
+                        if (item.children.length) {
+                            this.findInTree(ggParentName, gParentName, parentName, name, item.children)
+                        }
+                    }
+                } else {
+                    if (item.name == parentName) {
+                        item.children.forEach(child => {
+                            if (child.name == name) {
+                                console.log(`Found ${name} at ${child.depth}:${child.index}`);
+                                return child;
+                            }
+                        })
+                    } else if (item.children) {
+                        if (item.children.length) {
+                            this.findInTree(ggParentName, gParentName, parentName, name, item.children)
+                        }
+                    }
+                }
+            })
+        },
+        updateActiveBranches() {
+            console.log('Tree updated')
+        },
+        checkItem(item) {
+            console.log(`Checking ${item.name}`)
+        },
         filewalker(dir, done) {
             let results = [];
             
@@ -270,68 +367,54 @@ export default {
                 this.items.push(
                     {
                         name: path.match(self.rx.lastFolder)[0].split('\/').join(''),
-                        children: self.buildTreeForDisplay(folder.data, [], path),
+                        children: self.buildTreeForDisplay(folder.data, [], path, 0, 0, 0),
                         active: false,
                         elt: null,
+                        index: 0,
+                        depth: 0,
+                        id: 0,
                     },
                 );
-            else
-                console.log(`Error #${folder.err}`)
+            // console.log('Should be done')
+            // setTimeout(() => {
+            //     this.buildEltForSelection();
+            // }, 1000);
         },
-        buildTreeBranch(data, master, rootpath) {
-
-        },
-        buildTreeForDisplay(data, master, rootpath) {
-            console.log(`Master has ${master.length}`)
-            console.log(`Root path is ${rootpath}`)
-            console.log(data);
+        buildTreeForDisplay(data, master, rootpath, index, depth) {
             let mirror = [];
+            depth++, index = 0;
             data.forEach(entry => {
                 if (!this.ignores.includes(entry)) {
-                    // let name;
-                    // if (/\s/.test(entry))
-                    //     name = entry.split(' ').join('\_')
-                    // else
-                    //     name = entry;
+                    // @@ BUG
+                    // Paths with spaces yield error3: can't find
                     let result = {
                         name: entry,
                         elt: null,
                         active: false,
+                        index: index++,
+                        depth: depth,
                     };
                     if (!window.cep.fs.readdir(rootpath + entry).err) {
-                        result.children = this.buildTreeForDisplay(window.cep.fs.readdir(rootpath + entry).data, mirror, rootpath + entry)
+                        result.children = this.buildTreeForDisplay(window.cep.fs.readdir(rootpath + entry).data, mirror, rootpath + entry, index, depth)
                     } else {
-                        // if (/adobe\safter\seffects\sauto\-save/i.test(entry)) {
-                        //     let checker = window.cep.fs.readdir(rootpath + entry);
-                        // }
                         if (this.rx.fileExt.test(entry)) {
                             result.ext = entry.match(this.rx.fileExt)[0].replace('\.', '');
-
                         } else {
-                            console.log(`${entry} is probably a folder:`)
+                            // console.log(`${entry} is probably a folder:`)
                             let errorMsg = this.fsError[window.cep.fs.readdir(rootpath + entry).err];
                             if (!/\/$/.test(rootpath)) {
-                                result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`)
+                                result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`, index, depth)
                             }
-                            console.log(`${rootpath + entry} ? ${errorMsg}`)
-
+                            // console.log(`${rootpath + entry} ? ${errorMsg}`)
                         }
                         
                     }
-    
                     mirror.push(result);
                 }
             })
-            console.log(mirror);
+            // console.log(mirror);
             return mirror;
         },
-        buildEltForSelection() {
-            console.log('Build selection');
-            // Could scan for open via clientHeight, and label via innerText
-            console.log(this.items)
-            let branches = document.querySelectorAll('.v-treeview-node');
-            console.log(branches)
-        }
     }
 }
 </script>
