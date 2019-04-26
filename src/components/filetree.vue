@@ -21,7 +21,7 @@
             active-class="tree-active"
             :items="items"
             activatable
-            item-key="name"
+            item-key="pen"
             @update:active="updateActiveBranches()"
             item-text="name"
             open-on-click
@@ -156,98 +156,16 @@ export default {
         tree: [],
         items: [],
         branches: [],
-        // fake: [
-        //     {
-        //         name: 'Root',
-        //         elt: null,
-        //         active: false,
-        //         children: [
-        //             {
-        //                 name: '.git',
-        //                 elt: null,
-        //                 active: false,
-        //             },
-        //             {
-        //                 name: 'node_modules',
-        //                 elt: null,
-        //                 active: false,
-        //             },
-        //             {
-        //                 name: 'public',
-        //                 elt: null,
-        //                 active: false,
-        //                 children: [
-        //                     {
-        //                         name: 'static',
-        //                         elt: null,
-        //                         active: false,
-        //                         children: [
-        //                             {
-        //                                 name: 'logo.png',
-        //                                 elt: null,
-        //                                 active: false,
-        //                                 ext: 'png'
-        //                             }
-        //                         ]
-        //                     },
-        //                     {
-        //                         name: 'favicon.ico',
-        //                         elt: null,
-        //                         active: false,
-        //                         ext: 'png'
-        //                     },
-        //                     {
-        //                         name: 'index.html',
-        //                         elt: null,
-        //                         active: false,
-        //                         ext: 'html'
-        //                     }
-        //                 ]
-        //             },
-        //             {
-        //                 name: '.gitignore',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'txt'
-        //             },
-        //             {
-        //                 name: 'babel.config.js',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'js'
-        //             },
-        //             {
-        //                 name: 'package.json',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'json'
-        //             },
-        //             {
-        //                 name: 'README.md',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'md'
-        //             },
-        //             {
-        //                 name: 'vue.config.js',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'js'
-        //             },
-        //             {
-        //                 name: 'yarn.lock',
-        //                 elt: null,
-        //                 active: false,
-        //                 ext: 'txt'
-        //             }
-        //         ]
-        //     }
-        // ]
+        penList: [],
     }),
     watch: {
         valid(state) {
-            if (state)
+            if (state) {
                 this.readDir(this.app.input.realoutput)
+                let logdata = window.cep.fs.writeFile(`${this.app.root}/public/logdata.json`, JSON.stringify(this.items))
+                if (!logdata.err)
+                    console.log(`Log written succesfully`)
+            }
         },
         open(list) {
             console.log(`Open is ${this.open.length} ? ${this.autobranches.length}`)
@@ -281,16 +199,27 @@ export default {
 
     },
     methods: {
+        getPEN() {
+            return this.checkPEN(Math.floor(Math.random() * 16777215).toString(16));
+        },
+        checkPEN(color) {
+            let found = this.penList.find(pen => {
+                return pen == color;
+            })
+            if (!found) {
+                this.penList.push(color)
+                return color;
+            } else {
+                return this.getPEN();
+            }
+        },
         buildMissingElts() {
             console.log('Build missing elts');
             // Could scan for open via clientHeight, and label via innerText
-            console.log(this.tree);
-            console.log(this.open);
-            console.log(this.items);
             let branches = document.querySelectorAll('.v-treeview-node');
             console.log(`${branches.length} are visible`)
             const self = this;
-            let mirror = []
+            let mirror = [], result = null;
             branches.forEach(elt => {
                 let name = elt.innerText.match(/[^\s]*/)[0], parentName = null, gParentName = null, ggParentName = null;
                 if (elt.parentElement.classList.contains('v-treeview-node__children')) {
@@ -301,31 +230,81 @@ export default {
                             ggParentName = elt.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.children[0].children[1].children[1].innerText;
                         }
                     }
-                    // console.log();
                 }
-                mirror.push(self.findInTree(ggParentName, gParentName, parentName, name, this.items));
+                // console.log()
+                result = self.findInTree(ggParentName, gParentName, parentName, name, this.items, elt.innerHTML);
+                // console.log(elt.innerHTML)
+                mirror.push(elt.innerHTML);
+            })
+            console.log(this.items);
+            console.log(mirror);
+            this.convertElts(mirror);
+        },
+        findInTreeByHTML(rawhtml, list) {
+            list.forEach(item => {
+                if (item.elt == rawhtml)
+                    return item;
+                else if (item.children && item.children.length)
+                    this.findInTreeByHTML(rawhtml, item.children);
             })
         },
-        findInTree(ggParentName, gParentName, parentName, name, list) {
+        convertElts(list) {
+            let branches = document.querySelectorAll('.v-treeview-node');
+            branches.forEach((elt, index) => {
+                if (elt.innerHTML == list[index]) {
+                    console.log('----')
+                    console.log(`Match found at:`)
+                    console.log(elt);
+                    let result = this.findInTreeByHTML(list[index], this.items);
+
+                    console.log(result);
+                    console.log('----')
+                }
+            })
+        },
+        findInTree(ggParentName, gParentName, parentName, name, list, elt) {
             let branches = document.querySelectorAll('.v-treeview-node');
             list.forEach(item => {
                 if (ggParentName) {
-
-                } else if (gParentName) {
-                    if (item.name == gParentName) {
+                    if (item.name == ggParentName) {
                         item.children.forEach(child => {
                             if (child.children && child.children.length) {
                                 child.children.forEach(grandchild => {
-                                    if (grandchild.name == name) {
-                                        console.log(`Found granchild ${name} at ${child.depth}:${child.index}`);
-                                        return child;
+                                    if (grandchild.children && grandchild.children.length) {
+                                        grandchild.children.forEach(greatgrandchild => {
+                                            if (greatgrandchild.name == name) {
+                                                console.log(`Found greatgranchild ${name} at ${greatgrandchild.depth}:${greatgrandchild.index}`);
+                                                if (!greatgrandchild.elt)
+                                                    greatgrandchild.elt = elt;
+                                                return greatgrandchild;
+                                            }
+                                        })
                                     }
                                 })
                             }
                         })
                     } else if (item.children) {
                         if (item.children.length) {
-                            this.findInTree(ggParentName, gParentName, parentName, name, item.children)
+                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
+                        }
+                    }
+                } else if (gParentName) {
+                    if (item.name == gParentName) {
+                        item.children.forEach(child => {
+                            if (child.children && child.children.length) {
+                                child.children.forEach(grandchild => {
+                                    if (grandchild.name == name) {
+                                        console.log(`Found granchild ${name} at ${grandchild.depth}:${grandchild.index}`);
+                                        if (!grandchild.elt)
+                                            grandchild.elt = elt;
+                                        return grandchild;
+                                    }
+                                })
+                            }
+                        })
+                    } else if (item.children) {
+                        if (item.children.length) {
+                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
                         }
                     }
                 } else {
@@ -333,12 +312,14 @@ export default {
                         item.children.forEach(child => {
                             if (child.name == name) {
                                 console.log(`Found ${name} at ${child.depth}:${child.index}`);
+                                if (!child.elt)
+                                    child.elt = elt;
                                 return child;
                             }
                         })
                     } else if (item.children) {
                         if (item.children.length) {
-                            this.findInTree(ggParentName, gParentName, parentName, name, item.children)
+                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
                         }
                     }
                 }
@@ -367,12 +348,13 @@ export default {
                 this.items.push(
                     {
                         name: path.match(self.rx.lastFolder)[0].split('\/').join(''),
+                        path: path,
                         children: self.buildTreeForDisplay(folder.data, [], path, 0, 0, 0),
                         active: false,
                         elt: null,
                         index: 0,
                         depth: 0,
-                        id: 0,
+                        pen: this.getPEN(),
                     },
                 );
             // console.log('Should be done')
@@ -380,30 +362,41 @@ export default {
             //     this.buildEltForSelection();
             // }, 1000);
         },
-        buildTreeForDisplay(data, master, rootpath, index, depth) {
+        buildTreeForDisplay(data, master, rootpath, index, depth, id) {
             let mirror = [];
             depth++, index = 0;
             data.forEach(entry => {
+                id++;
                 if (!this.ignores.includes(entry)) {
                     // @@ BUG
                     // Paths with spaces yield error3: can't find
                     let result = {
                         name: entry,
                         elt: null,
+                        uid: `${entry};${depth};${index}`,
+                        path: null,
                         active: false,
+                        pen: this.getPEN(),
                         index: index++,
                         depth: depth,
                     };
                     if (!window.cep.fs.readdir(rootpath + entry).err) {
-                        result.children = this.buildTreeForDisplay(window.cep.fs.readdir(rootpath + entry).data, mirror, rootpath + entry, index, depth)
+                        result.children = this.buildTreeForDisplay(window.cep.fs.readdir(rootpath + entry).data, mirror, rootpath + entry, index, depth, id)
+                        result.path = rootpath + entry;
                     } else {
                         if (this.rx.fileExt.test(entry)) {
                             result.ext = entry.match(this.rx.fileExt)[0].replace('\.', '');
+                            if (!/\/$/.test(rootpath)) {
+                                result.path = `${rootpath}/${entry}`;
+                            } else {
+                                result.path = rootpath + entry;
+                            }
                         } else {
                             // console.log(`${entry} is probably a folder:`)
                             let errorMsg = this.fsError[window.cep.fs.readdir(rootpath + entry).err];
                             if (!/\/$/.test(rootpath)) {
-                                result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`, index, depth)
+                                result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`, index, depth, id)
+                                result.path = `${rootpath}/${entry}`;
                             }
                             // console.log(`${rootpath + entry} ? ${errorMsg}`)
                         }
