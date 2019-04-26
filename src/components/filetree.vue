@@ -45,10 +45,26 @@
                 </div>
             </template> -->
             <template v-slot:append="{ item, open }" >
-                <div class="pr-4">
-                    <v-btn icon @click.stop @click="checkItem(item)">
+                <div class="pr-4" 
+                    @mouseenter="item.hover = true;"
+                    @mouseleave="item.hover = false;"
+                    >
+                    <v-btn icon 
+                        v-show="item.children && item.hover"
+                        v-for="action in getActions(item)" :key="item.path + action.name"
+                        @click.stop @click="doAction(item, action)"
+                        >
                         <v-icon>
-                            save
+                            {{action.icon}}
+                        </v-icon>
+                    </v-btn>
+                    <v-btn icon 
+                        v-show="!item.children"
+                        v-for="action in getActions(item)" :key="action.name"
+                        @click.stop @click="doAction(item, action)"
+                        >
+                        <v-icon>
+                            {{action.icon}}
                         </v-icon>
                     </v-btn>
                 </div>
@@ -199,6 +215,24 @@ export default {
 
     },
     methods: {
+        doAction(item, action) {
+            console.log(`Do ${action.name} on ${item.path}`);
+        },
+        getActions(item) {
+            let result = [];
+            if (item.children) {
+                result.push({
+                    icon: 'save',
+                    name: 'quicksave'
+                })
+            } else if (item.ext == 'ai') {
+                result.push({
+                    icon: 'save_alt',
+                    name: 'export',
+                })
+            }
+            return result;
+        },
         getPEN() {
             return this.checkPEN(Math.floor(Math.random() * 16777215).toString(16));
         },
@@ -351,6 +385,7 @@ export default {
                         path: path,
                         children: self.buildTreeForDisplay(folder.data, [], path, 0, 0, 0),
                         active: false,
+                        hover: false,
                         elt: null,
                         index: 0,
                         depth: 0,
@@ -376,6 +411,7 @@ export default {
                         uid: `${entry};${depth};${index}`,
                         path: null,
                         active: false,
+                        hover: false,
                         pen: this.getPEN(),
                         index: index++,
                         depth: depth,
