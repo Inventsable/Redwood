@@ -21,31 +21,33 @@
             active-class="tree-active"
             :items="items"
             activatable
-            item-key="pen"
+            item-key="path"
             item-text="name"
             open-on-click
             :search="search"
             :filter="filter"
         >
-            <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
             <template v-slot:prepend="{ item, open }">
+                <!-- If a folder -->
                 <v-icon v-if="!item.ext" :class="item.children.length ? 'pl-2' : ''"  >
                     {{ item.children.length ? open ? 'mdi-folder-open' : 'mdi-folder' : 'mdi-folder-outline' }}
                 </v-icon>
-                <v-icon v-else>
+                <!-- If a file -->
+                <v-icon :color="item.path == doc.path ? 'amber lighten-3' : ''" v-else>
                     {{ supportedExts.includes(item.ext) ? extIcons[item.ext] : extIcons.unknown }}
                 </v-icon>
             </template>
-            <!-- <template v-slot:label="{ item, open }">
-                <div style="cursor:pointer;">
+            <template v-slot:label="{ item, open }">
+                <div :class="item.path == doc.path ? 'amber--text text--lighten-3' : ''" style="cursor:pointer;">
                     {{item.name}}
                 </div>
-            </template> -->
+            </template>
             <template v-slot:append="{ item, open }" >
                 <div class="pr-4" 
                     @mouseenter="item.hover = true;"
                     @mouseleave="item.hover = false;"
                     >
+                    <!-- If a folder -->
                     <v-btn icon 
                         v-show="item.children && item.hover"
                         v-for="action in getActions(item)" :key="item.path + action.name"
@@ -55,12 +57,14 @@
                             {{action.icon}}
                         </v-icon>
                     </v-btn>
+                    <!-- If a file -->
                     <v-btn icon 
+                        
                         v-show="!item.children"
                         v-for="action in getActions(item)" :key="action.name"
                         @click.stop @click="doAction(item, action)"
                         >
-                        <v-icon>
+                        <v-icon :color="item.path == doc.path ? 'amber lighten-3' : ''">
                             {{action.icon}}
                         </v-icon>
                     </v-btn>
@@ -81,6 +85,11 @@ export default {
         valid: false,
         open: [],
         active: [],
+        doc: {
+            path: null,
+            name: null,
+            parent: null,
+        },
         caseSensitive: false,
         fsError: [
             'NO_ERROR','ERR_UNKNOWN','ERR_INVALID_PARAMS','ERR_NOT_FOUND','ERR_CANT_READ','ERR_UNSUPPORTED_ENCODING','ERR_CANT_WRITE','ERR_OUT_OF_SPACE','ERR_NOT_FILE','ERR_NOT_DIRECTORY','ERR_FILE_EXISTS'
@@ -209,30 +218,49 @@ export default {
     mounted() {
         console.log('Mounted');
         this.app.treemenu = this;
+        if (this.app.appName == 'ILST') {
+            this.callDoc();
+            this.app.csInterface.addEventListener('documentAfterActivate', this.callDoc);
+        }
     },
     methods: {
+        callDoc() {
+            console.log('Calling doc')
+            this.app.csInterface.evalScript('thisDoc()', this.getDoc)
+        },
+        getDoc(msg) {
+            if (!this.app.macOS) {
+                if (/^\/c\//.test(msg)) {
+                    msg = msg.replace(/^\/c\//, `C\:\/`);
+                }
+            }
+            this.doc.path = msg;
+            console.log(`Doc changed to ${msg}`)
+            // console.log(msg);
+        },
         doAction(item, action) {
             console.log(`Do ${action.name} on ${item.path}`);
-            console.log(window);
-        },
-        ILSTActions(path, action) {
-            let result = this['ILST' + action.name]();
-            console.log(result);
-        },
-        ILSTexport(path, action) {
-            console.log('Export successfully called')
+            this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
         },
         getActions(item) {
             let result = [];
             if (item.children) {
                 result.push({
                     icon: 'save',
-                    name: 'quicksave'
+                    name: 'quicksave',
+                    tooltip: 'Quicksave',
                 })
             } else if (item.ext == 'ai') {
                 result.push({
                     icon: 'save_alt',
-                    name: 'export',
+                    name: 'openDoc',
+                    tooltip: 'Open document'
+                })
+            } else if (item.ext == 'jsx') {
+                result.push({
+                    icon: 'edit',
+                    name: 'runScript',
+                    tooltip: 'Run this script'
                 })
             }
             return result;
