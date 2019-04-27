@@ -96,6 +96,9 @@ export default {
         valid: false,
         open: [],
         active: [],
+        timers: [],
+        itemLength: 0,
+        dirLength: 0,
         doc: {
             path: null,
             name: null,
@@ -223,11 +226,13 @@ export default {
         }
     },
     mounted() {
-        console.log('Mounted');
         this.app.treemenu = this;
         if (this.app.appName == 'ILST') {
             this.callDoc();
             this.app.csInterface.addEventListener('documentAfterActivate', this.callDoc);
+        }
+        if (this.items.length) {
+            console.log('Start sync');
         }
     },
     methods: {
@@ -278,11 +283,6 @@ export default {
                             if (item.length > 2)
                                 mirror.push(item);
                         })
-                        console.log('Treated message is now:')
-                        console.log(mirror)
-                        mirror.forEach(reflection => {
-                            console.log(`Reflection: ${reflection.length}`)
-                        })
                         this.app.csInterface.evalScript(`${action.name}('${mirror}')`);
                     } else {
                         this.app.csInterface.evalScript(`${action.name}('${msg.data}')`);
@@ -324,6 +324,7 @@ export default {
                         tooltip: 'Run this script'
                     })
                 }
+                // If a linkable asset or text
                 if (/svg|png|jpg/.test(item.ext)) {
                     result.push({
                         icon: 'mdi-image-plus',
@@ -355,9 +356,101 @@ export default {
                 return this.getPEN();
             }
         },
+        
+        
+        clearAllTimers() {
+            this.timers.forEach(timer => {
+                clearInterval(timer);
+            })
+            console.log('Cleared')
+        },
+        checkItemChildren(list, count) {
+            if (list.length) {
+                list.forEach(item => {
+                    // console.log(item.name)
+                    count++;
+                    if (item.children && item.children.length) {
+                        count = this.checkItemChildren(item.children, count);
+                    }
+                })
+            }
+            return count;
+        },
+        checkItemLength(count=0) {
+            this.items.forEach(item => {
+                count++;
+                if (item.children && item.children.length) {
+                    count = this.checkItemChildren(item.children, count);
+                }
+            })
+            return count;
+        },
+        // !! Something is wrong -- yields over 19k instead of 70;
+
+        syncDirLength(path) {
+            const self = this;
+            this.timers.push(setInterval(() => {
+                self.dirLength = self.checkDirLength(-1);
+                console.log(`${self.dirLength} ?== ${self.itemLength}`)
+                if (self.dirLength !== self.itemLength) {
+                    console.log(`Something has changed: dir length is ${self.dirLength} ?== item length is ${self.itemLength}`)
+                    self.readDir(self.app.input.realoutput)
+                    console.log(`Root has been reloaded`)
+                }
+            }, 2000))
+        },
+        checkDirChildren(list, root, count) {
+            if (list) {
+                list.forEach(item => {
+                    count++;
+                    if (!this.ignores.includes(item)) { 
+                        if (!window.cep.fs.readdir(root + item).err) {
+                            count = this.checkDirChildren(window.cep.fs.readdir(root + item).data, root + item, count);
+                        } else {
+                            if (!this.rx.fileExt.test(item)) {
+                                if (!window.cep.fs.readdir(`${root}/${item}`).err)
+                                    count = this.checkDirChildren(window.cep.fs.readdir(`${root}/${item}`).data, `${root}/${item}`, count);  
+                            }
+                        }
+                    }
+                })
+            }
+            return count;
+        },
+        checkDirLength(count) {
+            const root = this.app.input.realoutput;
+            let dirChildren = window.cep.fs.readdir(root);
+            if (!dirChildren.err) {
+                dirChildren.data.forEach(item => {
+                    count++;
+                    if (!this.ignores.includes(item)) {
+                        if (!window.cep.fs.readdir(root + item).err) {
+                            count = this.checkDirChildren(window.cep.fs.readdir(root + item).data, root + item, count);
+                        } else {
+                            if (!this.rx.fileExt.test(item)) {
+                                if (!window.cep.fs.readdir(`${root}/${item}`).err)
+                                    count = this.checkDirChildren(window.cep.fs.readdir(`${root}/${item}`).data, `${root}/${item}`, count);  
+                            }
+                        }
+                    }
+                })
+            }
+            return count;
+        },
         readDir(path) {
             console.log(`Path to ${path}`)
             const self = this;
+            let finder = this.items.find(root => {
+                return root.path == path;
+            })
+            if (finder) {
+                this.items = this.items.filter(root => {
+                    return root !== finder;
+                })
+                console.log(`Cleared older version`)
+            } else {
+                console.log(`This is brand new`)
+            }
             let folder = window.cep.fs.readdir(path);
             if (!folder.err)
                 this.items.push(
@@ -373,6 +466,10 @@ export default {
                         pen: this.getPEN(),
                     },
                 );
+            this.itemLength = this.checkItemLength(0);
+            if (!this.timers.length)
+                this.syncDirLength();
+                
         },
         buildTreeForDisplay(data, master, rootpath, index, depth, id) {
             let mirror = [];
