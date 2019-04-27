@@ -15,9 +15,34 @@ function mkdir(path) {
   }
 }
 
+function addText(contents) {
+  let err = 0;
+  if (app.selection.length) {
+    for (let i = 0; i < app.activeDocument.textFrames.length; i++) {
+      const textItem = app.activeDocument.textFrames[i]
+      if (textItem.selected) {
+        err++;
+        textItem.contents = contents;
+      }
+    }
+  }
+  if (err < 1) {
+    let newText = app.activeDocument.textFrames.add();
+    newText.contents = contents;
+  }
+}
+
+function addImage(path) {
+  let file = new File(path);
+  let imagePlace = app.activeDocument.activeLayer.placedItems.add();
+  imagePlace.file = file;
+}
 
 function thisDoc() {
-  return app.activeDocument.fullName;
+  if (app.documents.length > 0)
+    return app.activeDocument.fullName;
+  else
+    return false;
 }
 function saveDoc(dest) {
   if (app.documents.length > 0) {

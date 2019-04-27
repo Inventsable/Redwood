@@ -29,7 +29,10 @@
         >
             <template v-slot:prepend="{ item, open }">
                 <!-- If a folder -->
-                <v-icon v-if="!item.ext" :class="item.children.length ? 'pl-2' : ''"  >
+                <v-icon v-if="!item.ext" 
+                    :color="hasDocDescendent(item) ? 'amber lighten-3' : ''"
+                    :class="item.children.length ? 'pl-2' : ''" 
+                    >
                     {{ item.children.length ? open ? 'mdi-folder-open' : 'mdi-folder' : 'mdi-folder-outline' }}
                 </v-icon>
                 <!-- If a file -->
@@ -38,7 +41,10 @@
                 </v-icon>
             </template>
             <template v-slot:label="{ item, open }">
-                <div :class="item.path == doc.path ? 'amber--text text--lighten-3' : ''" style="cursor:pointer;">
+                <div
+
+                    :class="hasDocDescendent(item) ? 'amber--text text--lighten-3' : item.path == doc.path ? 'amber--text text--lighten-3' : ''" 
+                    style="cursor:pointer;">
                     {{item.name}}
                 </div>
             </template>
@@ -58,16 +64,21 @@
                         </v-icon>
                     </v-btn>
                     <!-- If a file -->
-                    <v-btn icon 
-                        
-                        v-show="!item.children"
-                        v-for="action in getActions(item)" :key="action.name"
-                        @click.stop @click="doAction(item, action)"
-                        >
-                        <v-icon :color="item.path == doc.path ? 'amber lighten-3' : ''">
-                            {{action.icon}}
-                        </v-icon>
-                    </v-btn>
+                    <v-tooltip top v-for="action in getActions(item)" :key="action.name">
+                        <template v-slot:activator="{ on }">
+                            <v-btn icon 
+                                v-on="on"
+                                v-show="!item.children"
+                                @click.stop @click="doAction(item, action)"
+                                >
+                                <v-icon :color="item.path == doc.path ? 'amber lighten-3' : ''">
+                                    {{action.icon}}
+                                </v-icon>
+                            </v-btn>
+                        </template>
+                        <span>{{action.tooltip}}</span>
+                    </v-tooltip>
+                    
                 </div>
             </template>
         </v-treeview>
@@ -138,12 +149,14 @@ export default {
             'npmignore',
             'browserslistrc',
             'yml',
+            'svg',
         ],
         extIcons: {
             unknown: 'mdi-file-question',
             html: 'mdi-language-html5',
             jsx: 'mdi-nodejs',
             js: 'mdi-nodejs',
+            svg: 'mdi-svg',
             gitignore: 'mdi-file-cancel',
             debug: 'mdi-file-search',
             ai: 'mdi-file-image',
@@ -190,13 +203,7 @@ export default {
             }
         },
         open(list) {
-            
-
-            // if (this.open.length !== this.branches.length) {
-            //     setTimeout(() => {
-            //         this.buildMissingElts();
-            //     }, 50);
-            // }
+            console.log(list);
         },
         active(list) {
             console.log(list)
@@ -224,6 +231,26 @@ export default {
         }
     },
     methods: {
+        hasDocDescendent(item) {
+            if (item.children && item.children.length) {
+                let check = item.children.find(child => {
+                    return child.path == this.doc.path;
+                })
+                if (check) {
+                    return true;
+                } else {
+                    item.children.forEach(child => {
+                        if (child.children && child.children.length) {
+                            let childcheck = child.children.find(grandchild => {
+                                return grandchild.path == this.doc.path;
+                            })
+                            if (childcheck)
+                                return true;
+                        }
+                    })
+                }
+            }
+        },
         callDoc() {
             console.log('Calling doc')
             this.app.csInterface.evalScript('thisDoc()', this.getDoc)
@@ -235,33 +262,82 @@ export default {
                 }
             }
             this.doc.path = msg;
-            console.log(`Doc changed to ${msg}`)
-            // console.log(msg);
         },
         doAction(item, action) {
-            console.log(`Do ${action.name} on ${item.path}`);
-            this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+            console.log(`Doing ${action.name} on ${item.path}`)
+            if (action.name == 'addText') {
+                // Read file contents first then pass contents
+                let msg = window.cep.fs.readFile(item.path);
+                if (!msg.err) {
+                    let mirror = [];
+                    console.log(msg)
+                    // Sending file with newlines causes ESTK to ignore, so replace them
+                    if (/(\r\n|\r|\n)/gm.test(msg.data)) {
+                        msg.data = msg.data.split(/(\r\n|\r|\n)/);
+                        msg.data.forEach(item => {
+                            if (item.length > 2)
+                                mirror.push(item);
+                        })
+                        console.log('Treated message is now:')
+                        console.log(mirror)
+                        mirror.forEach(reflection => {
+                            console.log(`Reflection: ${reflection.length}`)
+                        })
+                        this.app.csInterface.evalScript(`${action.name}('${mirror}')`);
+                    } else {
+                        this.app.csInterface.evalScript(`${action.name}('${msg.data}')`);
+                    }
+                }
+            } else {
+
+                this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+            }
         },
         getActions(item) {
             let result = [];
-            if (item.children) {
+            // If item is the current document in Application
+            if (item.path == this.doc.path) {
                 result.push({
                     icon: 'save',
-                    name: 'quicksave',
-                    tooltip: 'Quicksave',
+                    name: 'exporter',
+                    tooltip: 'Quick export this file'
                 })
-            } else if (item.ext == 'ai') {
-                result.push({
-                    icon: 'save_alt',
-                    name: 'openDoc',
-                    tooltip: 'Open document'
-                })
-            } else if (item.ext == 'jsx') {
-                result.push({
-                    icon: 'edit',
-                    name: 'runScript',
-                    tooltip: 'Run this script'
-                })
+            } else {
+                // If a folder
+                if (item.children) {
+                    result.push({
+                        icon: 'save',
+                        name: 'quicksave',
+                        tooltip: 'Quicksave',
+                    })
+                // If a specific file type
+                } else if (item.ext == 'ai') {
+                    result.push({
+                        icon: 'save_alt',
+                        name: 'openDoc',
+                        tooltip: 'Open document'
+                    })
+                } else if (item.ext == 'jsx') {
+                    result.push({
+                        icon: 'edit',
+                        name: 'runScript',
+                        tooltip: 'Run this script'
+                    })
+                }
+                if (/svg|png|jpg/.test(item.ext)) {
+                    result.push({
+                        icon: 'mdi-image-plus',
+                        name: 'addImage',
+                        tooltip: 'Place image into document'
+                    })
+                } else if (/txt|md/.test(item.ext)) {
+                    result.push({
+                        icon: 'mdi-clipboard-text-play',
+                        name: 'addText',
+                        tooltip: 'Place text into document'
+                    })
+                }
+                
             }
             return result;
         },

@@ -13,8 +13,32 @@ function mkdir(path) {
         folder.create();
     }
 }
+function addText(contents) {
+    var err = 0;
+    if (app.selection.length) {
+        for (var i = 0; i < app.activeDocument.textFrames.length; i++) {
+            var textItem = app.activeDocument.textFrames[i];
+            if (textItem.selected) {
+                err++;
+                textItem.contents = contents;
+            }
+        }
+    }
+    if (err < 1) {
+        var newText = app.activeDocument.textFrames.add();
+        newText.contents = contents;
+    }
+}
+function addImage(path) {
+    var file = new File(path);
+    var imagePlace = app.activeDocument.activeLayer.placedItems.add();
+    imagePlace.file = file;
+}
 function thisDoc() {
-    return app.activeDocument.fullName;
+    if (app.documents.length > 0)
+        return app.activeDocument.fullName;
+    else
+        return false;
 }
 function saveDoc(dest) {
     if (app.documents.length > 0) {
