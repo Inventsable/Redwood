@@ -34,6 +34,19 @@ function addImage(path) {
     var imagePlace = app.activeDocument.activeLayer.placedItems.add();
     imagePlace.file = file;
 }
+function addSVG(path, name) {
+    var file = new File(path);
+    var groupItem = app.activeDocument.groupItems.createFromFile(file);
+    groupItem.name = name;
+    // Spawns with empty Group child object
+    for (var i = 0; i < groupItem.groupItems.length; i++) {
+        var item = groupItem.groupItems[i];
+        if (!item.pageItems.length) {
+            item.remove();
+        }
+    }
+    console.log(groupItem);
+}
 function thisDoc() {
     if (app.documents.length > 0)
         return app.activeDocument.fullName;
@@ -62,16 +75,16 @@ function setOptionsForSVGExport() {
     options.cssProperties = SVGCSSPropertyLocation.STYLEELEMENTS;
     return options;
 }
-function exportSVG(path) {
-    var thisFile = new File(path);
+function quickExportSVG(path) {
+    if (!/\/|\\$/.test(path))
+        path += '\/';
+    var name = app.activeDocument.name.replace(/\.[\w]*/, '.svg');
+    var thisFile = new File(path + name);
     var type = ExportType.WOSVG;
     app.activeDocument.exportFile(thisFile, type, setOptionsForSVGExport());
 }
-function exporter(dest) {
-    if (/\.svg$/gm.test(dest)) {
-        exportSVG(dest);
-    }
-    else if (/\.(png|jpeg|psd|eps|gif|tiff)$/gm.test(dest)) {
+function quickExportImage(dest) {
+    if (/\.(png|jpeg|psd|eps|gif|tiff)$/gm.test(dest)) {
         exportAs(dest);
     }
     else {

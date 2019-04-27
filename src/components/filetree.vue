@@ -54,17 +54,33 @@
                     @mouseleave="item.hover = false;"
                     >
                     <!-- If a folder -->
-                    <v-btn icon 
-                        v-show="item.children && item.hover"
+                    <!-- <v-btn icon 
+                        v-show="item.children && open"
                         v-for="action in getActions(item)" :key="item.path + action.name"
                         @click.stop @click="doAction(item, action)"
                         >
                         <v-icon>
                             {{action.icon}}
                         </v-icon>
-                    </v-btn>
+                    </v-btn> -->
+                    <div v-if="item.children && open">
+                        <v-tooltip top v-for="action in getActions(item)" :key="item.path + action.name">
+                            <template v-slot:activator="{ on }">
+                                <v-btn icon 
+                                    v-on="on"
+                                    v-show="item.children && open"
+                                    @click.stop @click="doAction(item, action)"
+                                    >
+                                    <v-icon :color="hasDocDescendent(item) ? 'amber lighten-3' : ''">
+                                        {{action.icon}}
+                                    </v-icon>
+                                </v-btn>
+                            </template>
+                            <span>{{action.tooltip}}</span>
+                        </v-tooltip>
+                    </div>
                     <!-- If a file -->
-                    <v-tooltip top v-for="action in getActions(item)" :key="action.name">
+                    <v-tooltip top v-for="action in getActions(item)" :key="item.path + action.name">
                         <template v-slot:activator="{ on }">
                             <v-btn icon 
                                 v-on="on"
@@ -290,7 +306,26 @@ export default {
                 }
             } else {
 
-                this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+                // Else if this is a normal action leading to a path and we don't need to know contents
+                if (action.name == 'addSVG') {
+                    let name = item.name.replace(/\.[\w]*/, '');
+                    this.app.csInterface.evalScript(`${action.name}('${item.path}', '${name}')`);
+                } else if (action.name == 'quickExportSVG') {
+                    let name = item.name.replace(/\.[\w]*/, ''), path = item.path;
+                    if (!this.app.macOS) {
+                        if (!/\\$/.test(path)) {
+                            path += '\/'
+                        }
+                    } else {
+                        if (!/\/$/.test(path)) {
+                            path += '\/'
+                        }
+                    }
+                    console.log(path)
+                    this.app.csInterface.evalScript(`${action.name}('${path}')`);
+                } else {
+                    this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+                }
             }
         },
         getActions(item) {
@@ -304,16 +339,25 @@ export default {
                 })
             } else {
                 // If a folder
+
                 if (item.children) {
+
                     result.push({
-                        icon: 'save',
-                        name: 'quicksave',
-                        tooltip: 'Quicksave',
+                        icon: 'save_alt',
+                        name: 'quickExportSVG',
+                        tooltip: 'Export SVG to this folder',
                     })
+                    if (!this.hasDocDescendent(item)) {
+                        result.push({
+                            icon: 'save',
+                            name: 'quickSave',
+                            tooltip: 'Quicksave to this folder',
+                        })
+                    }
                 // If a specific file type
                 } else if (item.ext == 'ai') {
                     result.push({
-                        icon: 'save_alt',
+                        icon: 'mdi-open-in-app',
                         name: 'openDoc',
                         tooltip: 'Open document'
                     })
@@ -324,12 +368,18 @@ export default {
                         tooltip: 'Run this script'
                     })
                 }
-                // If a linkable asset or text
-                if (/svg|png|jpg/.test(item.ext)) {
+                // If an asset or text
+                if (/png|jpg/.test(item.ext)) {
                     result.push({
                         icon: 'mdi-image-plus',
                         name: 'addImage',
                         tooltip: 'Place image into document'
+                    })
+                } else if (/svg/.test(item.ext)) {
+                    result.push({
+                        icon: 'mdi-plus',
+                        name: 'addSVG',
+                        tooltip: 'Add SVG to the document'
                     })
                 } else if (/txt|md/.test(item.ext)) {
                     result.push({
@@ -356,8 +406,6 @@ export default {
                 return this.getPEN();
             }
         },
-        
-        
         clearAllTimers() {
             this.timers.forEach(timer => {
                 clearInterval(timer);
@@ -385,8 +433,6 @@ export default {
             })
             return count;
         },
-        // !! Something is wrong -- yields over 19k instead of 70;
-
         syncDirLength(path) {
             const self = this;
             this.timers.push(setInterval(() => {
@@ -547,6 +593,10 @@ export default {
     color: var(--color-main);
     font-size: 1rem;
     /* font-weight: 300; */
+}
+
+.v-btn {
+    margin: 0px;
 }
 
 .tree-active {

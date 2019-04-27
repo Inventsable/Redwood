@@ -1,0 +1,15 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174.2 154.27">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #d95433;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: 95px;
+      }
+    </style>
+  </defs>
+  <title>sandboxIcons</title>
+  <polyline class="cls-1" points="126.7 47.5 87.1 87.1 47.5 47.5"/>
+</svg>
