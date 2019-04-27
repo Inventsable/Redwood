@@ -1,5 +1,5 @@
 <template>
-    <v-container id="tree" class="pl-1" :style="getTreeStyle()">
+    <v-container id="tree" class="pl-1">
         <v-text-field
             prepend-inner-icon="search"
             v-model="search"
@@ -22,13 +22,10 @@
             :items="items"
             activatable
             item-key="pen"
-            @update:active="updateActiveBranches()"
             item-text="name"
             open-on-click
-            return-object
             :search="search"
             :filter="filter"
-            
         >
             <!-- <template slot="prepend" slot-scope="{ item, open }"> -->
             <template v-slot:prepend="{ item, open }">
@@ -184,15 +181,15 @@ export default {
             }
         },
         open(list) {
-            console.log(`Open is ${this.open.length} ? ${this.autobranches.length}`)
-            if (this.open.length !== this.branches.length) {
-                setTimeout(() => {
-                    this.buildMissingElts();
-                }, 50);
-            }
+            
+
+            // if (this.open.length !== this.branches.length) {
+            //     setTimeout(() => {
+            //         this.buildMissingElts();
+            //     }, 50);
+            // }
         },
         active(list) {
-            console.log('Active is now:')
             console.log(list)
         }
     },
@@ -212,11 +209,18 @@ export default {
     mounted() {
         console.log('Mounted');
         this.app.treemenu = this;
-
     },
     methods: {
         doAction(item, action) {
             console.log(`Do ${action.name} on ${item.path}`);
+            console.log(window);
+        },
+        ILSTActions(path, action) {
+            let result = this['ILST' + action.name]();
+            console.log(result);
+        },
+        ILSTexport(path, action) {
+            console.log('Export successfully called')
         },
         getActions(item) {
             let result = [];
@@ -247,133 +251,6 @@ export default {
                 return this.getPEN();
             }
         },
-        buildMissingElts() {
-            console.log('Build missing elts');
-            // Could scan for open via clientHeight, and label via innerText
-            let branches = document.querySelectorAll('.v-treeview-node');
-            console.log(`${branches.length} are visible`)
-            const self = this;
-            let mirror = [], result = null;
-            branches.forEach(elt => {
-                let name = elt.innerText.match(/[^\s]*/)[0], parentName = null, gParentName = null, ggParentName = null;
-                if (elt.parentElement.classList.contains('v-treeview-node__children')) {
-                    parentName = elt.parentElement.parentElement.children[0].children[1].children[1].innerText;
-                    if (!elt.parentElement.parentElement.parentElement.classList.contains('v-treeview')) {
-                        gParentName = elt.parentElement.parentElement.parentElement.parentElement.children[0].children[1].children[1].innerText;
-                        if (!elt.parentElement.parentElement.parentElement.parentElement.parentElement.classList.contains('v-treeview')) {
-                            ggParentName = elt.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.children[0].children[1].children[1].innerText;
-                        }
-                    }
-                }
-                // console.log()
-                result = self.findInTree(ggParentName, gParentName, parentName, name, this.items, elt.innerHTML);
-                // console.log(elt.innerHTML)
-                mirror.push(elt.innerHTML);
-            })
-            console.log(this.items);
-            console.log(mirror);
-            this.convertElts(mirror);
-        },
-        findInTreeByHTML(rawhtml, list) {
-            list.forEach(item => {
-                if (item.elt == rawhtml)
-                    return item;
-                else if (item.children && item.children.length)
-                    this.findInTreeByHTML(rawhtml, item.children);
-            })
-        },
-        convertElts(list) {
-            let branches = document.querySelectorAll('.v-treeview-node');
-            branches.forEach((elt, index) => {
-                if (elt.innerHTML == list[index]) {
-                    console.log('----')
-                    console.log(`Match found at:`)
-                    console.log(elt);
-                    let result = this.findInTreeByHTML(list[index], this.items);
-
-                    console.log(result);
-                    console.log('----')
-                }
-            })
-        },
-        findInTree(ggParentName, gParentName, parentName, name, list, elt) {
-            let branches = document.querySelectorAll('.v-treeview-node');
-            list.forEach(item => {
-                if (ggParentName) {
-                    if (item.name == ggParentName) {
-                        item.children.forEach(child => {
-                            if (child.children && child.children.length) {
-                                child.children.forEach(grandchild => {
-                                    if (grandchild.children && grandchild.children.length) {
-                                        grandchild.children.forEach(greatgrandchild => {
-                                            if (greatgrandchild.name == name) {
-                                                console.log(`Found greatgranchild ${name} at ${greatgrandchild.depth}:${greatgrandchild.index}`);
-                                                if (!greatgrandchild.elt)
-                                                    greatgrandchild.elt = elt;
-                                                return greatgrandchild;
-                                            }
-                                        })
-                                    }
-                                })
-                            }
-                        })
-                    } else if (item.children) {
-                        if (item.children.length) {
-                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
-                        }
-                    }
-                } else if (gParentName) {
-                    if (item.name == gParentName) {
-                        item.children.forEach(child => {
-                            if (child.children && child.children.length) {
-                                child.children.forEach(grandchild => {
-                                    if (grandchild.name == name) {
-                                        console.log(`Found granchild ${name} at ${grandchild.depth}:${grandchild.index}`);
-                                        if (!grandchild.elt)
-                                            grandchild.elt = elt;
-                                        return grandchild;
-                                    }
-                                })
-                            }
-                        })
-                    } else if (item.children) {
-                        if (item.children.length) {
-                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
-                        }
-                    }
-                } else {
-                    if (item.name == parentName) {
-                        item.children.forEach(child => {
-                            if (child.name == name) {
-                                console.log(`Found ${name} at ${child.depth}:${child.index}`);
-                                if (!child.elt)
-                                    child.elt = elt;
-                                return child;
-                            }
-                        })
-                    } else if (item.children) {
-                        if (item.children.length) {
-                            this.findInTree(ggParentName, gParentName, parentName, name, item.children);
-                        }
-                    }
-                }
-            })
-        },
-        updateActiveBranches() {
-            console.log('Tree updated')
-        },
-        checkItem(item) {
-            console.log(`Checking ${item.name}`)
-        },
-        filewalker(dir, done) {
-            let results = [];
-            
-        },
-        getTreeStyle() {
-            // font-size: 20px;
-            return `
-            `
-        },
         readDir(path) {
             console.log(`Path to ${path}`)
             const self = this;
@@ -392,10 +269,6 @@ export default {
                         pen: this.getPEN(),
                     },
                 );
-            // console.log('Should be done')
-            // setTimeout(() => {
-            //     this.buildEltForSelection();
-            // }, 1000);
         },
         buildTreeForDisplay(data, master, rootpath, index, depth, id) {
             let mirror = [];
@@ -428,13 +301,12 @@ export default {
                                 result.path = rootpath + entry;
                             }
                         } else {
-                            // console.log(`${entry} is probably a folder:`)
-                            let errorMsg = this.fsError[window.cep.fs.readdir(rootpath + entry).err];
+                            const errorMsg = this.fsError[window.cep.fs.readdir(rootpath + entry).err];
+                            // console.log(`${rootpath + entry} ? ${errorMsg}`)
                             if (!/\/$/.test(rootpath)) {
                                 result.children = this.buildTreeForDisplay(window.cep.fs.readdir(`${rootpath}/${entry}`).data, mirror, `${rootpath}/${entry}`, index, depth, id)
                                 result.path = `${rootpath}/${entry}`;
                             }
-                            // console.log(`${rootpath + entry} ? ${errorMsg}`)
                         }
                         
                     }

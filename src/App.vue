@@ -37,13 +37,15 @@ export default {
   },
   data: () => ({
     macOS: false,
+    homepage: 'https://github.com/Inventsable/Redwood',
     csInterface: null,
+    isLoaded: false,
+    appName: null,
     root: null,
     treemenu: null,
     input: null,
     rootLocation: null,
     lastRoute: null,
-    isLoaded: false,
     hasNotification: false,
     notificationText: 'Extension is mounted',
     notificationColor: 'primary',
@@ -52,6 +54,7 @@ export default {
         { id: "refresh", label: "Refresh panel", enabled: true, checkable: false, checked: false, },
         { label: "---" },
         { id: "localhost", label: "Launch debug", enabled: true, checkable: false, checked: false, },
+        { id: "github", label: "View source code", enabled: true, checkable: false, checked: false, },
       ]
     }
   }),
@@ -64,6 +67,7 @@ export default {
     this.csInterface = new CSInterface;
     this.setContextMenu();
     this.root = this.csInterface.getSystemPath(SystemPath.EXTENSION);
+    this.appName = this.csInterface.hostEnvironment.appName;
     this.loadUniversalScripts();
     this.csInterface.addEventListener('console', this.consoler);
 
@@ -91,6 +95,8 @@ export default {
         location.replace(this.rootLocation);
       } else if (id == 'localhost') {
         cep.util.openURLInDefaultBrowser(this.localhost);
+      } else if (id == 'github') {
+        cep.util.openURLInDefaultBrowser(this.homepage);
       }
     },
     loadUniversalScripts() {
