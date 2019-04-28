@@ -55,8 +55,6 @@ export default {
         { label: "---" },
         { id: "localhost", label: "Launch debug", enabled: true, checkable: false, checked: false, },
         { id: "github", label: "View source code", enabled: true, checkable: false, checked: false, },
-        { id: "test", label: "Test code", enabled: true, checkable: false, checked: false, },
-
       ]
     }
   }),
@@ -99,9 +97,6 @@ export default {
         cep.util.openURLInDefaultBrowser(this.localhost);
       } else if (id == 'github') {
         cep.util.openURLInDefaultBrowser(this.homepage);
-      } else if (id == 'test') {
-        console.log('Attempting')
-        this.csInterface.evalScript(`exportAllArtboards()`);
       }
     },
     loadUniversalScripts() {
