@@ -1,27 +1,27 @@
 # Redwood
 
-Rebuild of [mightyFolders](https://github.com/Inventsable/mightyFolders) with plans for real-time file syncing, contextual actions and keyboard navigation.
+Rebuild of [mightyFolders](https://github.com/Inventsable/mightyFolders) using Vuetify's Treeview component for a file tree menu with intuitive, contextual actions based on file types.
 
-## Infinite height and folder recursion:
+## Active Document detection:
 
-![](https://thumbs.gfycat.com/IncompatibleVainIberianlynx-size_restricted.gif)
+![](https://thumbs.gfycat.com/GlisteningCarefulDanishswedishfarmdog-size_restricted.gif)
 
-## Dynamic search filter
+## Real time file sync:
 
-![](https://thumbs.gfycat.com/GratefulBackHind-size_restricted.gif)
+![](https://thumbs.gfycat.com/NeighboringMeagerAntarcticfurseal-size_restricted.gif)
 
+## Contextual import / export / open / save as / place:
 
-## To-do:
+![](https://thumbs.gfycat.com/AdvancedChillyErmine-size_restricted.gif)
 
-* ~~Expandable, nestable list~~
-* ~~Dynamic search bar~~
-* ~~Dynamic creation of root folder treeview~~
-* ~~Unlimited instances of trees~~
-* Global selection mechanic for navigation between trees
-* Global key detection
-* Contextual import, export, save and open actions
-* ~~SETTINGS: Custom ignore filter~~
-* SETTINGS: User defined and custom icons per file extension
+## Inject text from file to selection:
+
+![](https://thumbs.gfycat.com/GlitteringWildFritillarybutterfly-size_restricted.gif)
+
+## Run any JSX script:
+
+![](https://thumbs.gfycat.com/MadSafeImpala-size_restricted.gif)
+
 
 
 

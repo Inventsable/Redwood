@@ -390,8 +390,8 @@ export default {
             } else {
                 // If a folder
 
-                if (item.children) {
-                    //  && !this.search
+                if (item.children && !this.search) {
+                    //  
                     result.push({
                         icon: 'save_alt',
                         name: 'quickExportSVG',
@@ -492,8 +492,8 @@ export default {
                     console.log(`Something has changed: dir length is ${self.dirLength} ?== item length is ${self.itemLength}`)
                     self.readDir(self.app.input.realoutput)
                     console.log(`Root has been reloaded`)
-                }
-            }, 2000))
+                } 
+            }, 200))
         },
         checkDirChildren(list, root, count) {
             if (list) {
