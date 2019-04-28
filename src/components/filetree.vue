@@ -399,7 +399,7 @@ export default {
         },
         getActions(item) {
             let result = [];
-            // If item is the current document in Application
+            // If host is Illustrator
             if (this.app.appName == 'ILST') {
 
                 if (item.path == this.doc.path) {
@@ -431,12 +431,6 @@ export default {
                             icon: 'mdi-open-in-app',
                             name: 'openDoc',
                             tooltip: 'Open document'
-                        })
-                    } else if (item.ext == 'jsx') {
-                        result.push({
-                            icon: 'edit',
-                            name: 'runScript',
-                            tooltip: 'Run this script'
                         })
                     }
                     // If an asset or text
@@ -489,6 +483,14 @@ export default {
                     })
                 }
             }
+            // Any Adobe app
+            if (item.ext == 'jsx') {
+                result.push({
+                    icon: 'edit',
+                    name: 'runScript',
+                    tooltip: 'Run this script'
+                })
+            }
             return result;
         },
         getPEN() {
@@ -535,7 +537,7 @@ export default {
         syncDirLength(path) {
             const self = this;
             this.timers.push(setInterval(() => {
-                self.dirLength = self.checkDirLength(-1);
+                self.dirLength = self.checkDirLength(0);
                 console.log(`${self.dirLength} ?== ${self.itemLength}`)
                 if (self.dirLength !== self.itemLength) {
                     console.log(`Something has changed: dir length is ${self.dirLength} ?== item length is ${self.itemLength}`)
@@ -567,8 +569,8 @@ export default {
             let dirChildren = window.cep.fs.readdir(root);
             if (!dirChildren.err) {
                 dirChildren.data.forEach(item => {
-                    count++;
                     if (!this.ignores.includes(item)) {
+                        count++;
                         if (!window.cep.fs.readdir(root + item).err) {
                             count = this.checkDirChildren(window.cep.fs.readdir(root + item).data, root + item, count);
                         } else {

@@ -52,8 +52,6 @@ function addSVG(path, name) {
 
 }
 
-
-
 function thisDoc() {
   if (app.documents.length > 0)
     return app.activeDocument.fullName;
@@ -70,6 +68,8 @@ function saveDoc(dest) {
       app.activeDocument.saveAs(aiDoc, saveOptions);
   }
 }
+
+
 function openDoc(path) {
   app.open(new File(path));
 }
