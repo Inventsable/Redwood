@@ -53,16 +53,6 @@
                     @mouseenter="item.hover = true;"
                     @mouseleave="item.hover = false;"
                     >
-                    <!-- If a folder -->
-                    <!-- <v-btn icon 
-                        v-show="item.children && open"
-                        v-for="action in getActions(item)" :key="item.path + action.name"
-                        @click.stop @click="doAction(item, action)"
-                        >
-                        <v-icon>
-                            {{action.icon}}
-                        </v-icon>
-                    </v-btn> -->
                     <div v-if="item.children && open">
                         <v-tooltip top v-for="action in getActions(item)" :key="item.path + action.name">
                             <template v-slot:activator="{ on }">
@@ -103,14 +93,13 @@
 </template>
 
 <script>
-// const fs = require('fs');
-// const path = require('path');
 
 export default {
     name: 'filetree',
     data: () => ({
         valid: false,
         open: [],
+        lastOpen: [],
         active: [],
         timers: [],
         itemLength: 0,
@@ -211,8 +200,35 @@ export default {
         items: [],
         branches: [],
         penList: [],
+        isSearching: false,
     }),
     watch: {
+        search(state) {
+            state = state || '';
+            console.log(state.length);
+            if (state.length) {
+                if (!this.isSearching) {
+                    this.isSearching = true;
+                    this.lastOpen = JSON.parse(JSON.stringify(this.open));
+                    console.log(this.lastOpen);
+                    console.log(this.open);
+                    console.log('Opening all items and assigning')
+                    this.openAllItems();
+                    console.log(this.lastOpen)
+                    console.log(this.open);
+                }
+            } else {
+                if (this.isSearching) {
+                    this.isSearching = false;
+                    this.revertOpenItems();
+                    if (!this.open.length) {
+                        this.open.push(this.items[0].path)
+                    }
+                    console.log(this.lastOpen);
+                    console.log(this.open);
+                }
+            }
+        },
         valid(state) {
             if (state) {
                 this.readDir(this.app.input.realoutput)
@@ -252,6 +268,40 @@ export default {
         }
     },
     methods: {
+        openChildFolders(parent) {
+            if (parent.children && parent.children.length) {
+                if (!this.open.includes(parent.path)) {
+                    // console.log(`Add ${parent.path}`)
+                    this.open.push(parent.path);
+                }
+                parent.children.forEach(child => {
+                    if (child.children && child.children.length) {
+                        // console.log(`Open ${child.name}`)
+                        this.openChildFolders(child);
+                    }
+                })
+            }
+        },
+        openAllItems() {
+            this.items.forEach(child => {
+                if (!this.open.includes(child.path)) {
+                    this.open.push(child.path);
+                }
+                this.openChildFolders(child);
+            })
+        },
+        revertOpenItems() {
+            console.log('Reverting open')
+            if (this.open.length) {
+                while (this.open.length)
+                    this.open.pop();
+            }
+            if (this.lastOpen.length) {
+                this.lastOpen.forEach(child => {
+                    this.open.push(child);
+                })
+            }
+        },
         hasDocDescendent(item) {
             if (item.children && item.children.length) {
                 let check = item.children.find(child => {
@@ -341,7 +391,7 @@ export default {
                 // If a folder
 
                 if (item.children) {
-
+                    //  && !this.search
                     result.push({
                         icon: 'save_alt',
                         name: 'quickExportSVG',
@@ -371,7 +421,7 @@ export default {
                 // If an asset or text
                 if (/png|jpg/.test(item.ext)) {
                     result.push({
-                        icon: 'mdi-image-plus',
+                        icon: 'mdi-plus',
                         name: 'addImage',
                         tooltip: 'Place image into document'
                     })
@@ -499,22 +549,23 @@ export default {
             }
             let folder = window.cep.fs.readdir(path);
             if (!folder.err)
-                this.items.push(
-                    {
-                        name: path.match(self.rx.lastFolder)[0].split('\/').join(''),
-                        path: path,
-                        children: self.buildTreeForDisplay(folder.data, [], path, 0, 0, 0),
-                        active: false,
-                        hover: false,
-                        elt: null,
-                        index: 0,
-                        depth: 0,
-                        pen: this.getPEN(),
-                    },
-                );
+                this.items.push({
+                name: path.match(self.rx.lastFolder)[0].split('\/').join(''),
+                path: path,
+                children: self.buildTreeForDisplay(folder.data, [], path, 0, 0, 0),
+                active: false,
+                hover: false,
+                elt: null,
+                index: 0,
+                depth: 0,
+                pen: this.getPEN(),
+            });
             this.itemLength = this.checkItemLength(0);
             if (!this.timers.length)
                 this.syncDirLength();
+
+            if (!this.open.length)
+                this.open.push(path);
                 
         },
         buildTreeForDisplay(data, master, rootpath, index, depth, id) {
