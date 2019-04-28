@@ -262,6 +262,8 @@ export default {
         if (this.app.appName == 'ILST') {
             this.callDoc();
             this.app.csInterface.addEventListener('documentAfterActivate', this.callDoc);
+        } else if (this.app.appName == 'AEFT') {
+            this.callComp();
         }
         if (this.items.length) {
             console.log('Start sync');
@@ -322,6 +324,18 @@ export default {
                 }
             }
         },
+        callComp() {
+            console.log('Calling comp')
+            this.app.csInterface.evalScript('getComp()', this.getComp)
+        },
+        getComp(msg) {
+            if (!this.app.macOS) {
+                if (/^\/c\//.test(msg)) {
+                    msg = msg.replace(/^\/c\//, `C\:\/`);
+                }
+            }
+            this.doc.path = msg;
+        },
         callDoc() {
             console.log('Calling doc')
             this.app.csInterface.evalScript('thisDoc()', this.getDoc)
@@ -336,109 +350,144 @@ export default {
         },
         doAction(item, action) {
             console.log(`Doing ${action.name} on ${item.path}`)
-            if (action.name == 'addText') {
-                // Read file contents first then pass contents
-                let msg = window.cep.fs.readFile(item.path);
-                if (!msg.err) {
-                    let mirror = [];
-                    console.log(msg)
-                    // Sending file with newlines causes ESTK to ignore, so replace them
-                    if (/(\r\n|\r|\n)/gm.test(msg.data)) {
-                        msg.data = msg.data.split(/(\r\n|\r|\n)/);
-                        msg.data.forEach(item => {
-                            if (item.length > 2)
-                                mirror.push(item);
-                        })
-                        this.app.csInterface.evalScript(`${action.name}('${mirror}')`);
-                    } else {
-                        this.app.csInterface.evalScript(`${action.name}('${msg.data}')`);
-                    }
-                }
-            } else {
-
-                // Else if this is a normal action leading to a path and we don't need to know contents
-                if (action.name == 'addSVG') {
-                    let name = item.name.replace(/\.[\w]*/, '');
-                    this.app.csInterface.evalScript(`${action.name}('${item.path}', '${name}')`);
-                } else if (action.name == 'quickExportSVG') {
-                    let name = item.name.replace(/\.[\w]*/, ''), path = item.path;
-                    if (!this.app.macOS) {
-                        if (!/\\$/.test(path)) {
-                            path += '\/'
-                        }
-                    } else {
-                        if (!/\/$/.test(path)) {
-                            path += '\/'
+            if (this.app.appName == 'ILST') {
+                if (action.name == 'addText') {
+                    // Read file contents first then pass contents
+                    let msg = window.cep.fs.readFile(item.path);
+                    if (!msg.err) {
+                        let mirror = [];
+                        console.log(msg)
+                        // Sending file with newlines causes ESTK to ignore, so replace them
+                        if (/(\r\n|\r|\n)/gm.test(msg.data)) {
+                            msg.data = msg.data.split(/(\r\n|\r|\n)/);
+                            msg.data.forEach(item => {
+                                if (item.length > 2)
+                                    mirror.push(item);
+                            })
+                            this.app.csInterface.evalScript(`${action.name}('${mirror}')`);
+                        } else {
+                            this.app.csInterface.evalScript(`${action.name}('${msg.data}')`);
                         }
                     }
-                    console.log(path)
-                    this.app.csInterface.evalScript(`${action.name}('${path}')`);
                 } else {
-                    this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+    
+                    // Else if this is a normal action leading to a path and we don't need to know contents
+                    if (action.name == 'addSVG') {
+                        let name = item.name.replace(/\.[\w]*/, '');
+                        this.app.csInterface.evalScript(`${action.name}('${item.path}', '${name}')`);
+                    } else if (action.name == 'quickExportSVG') {
+                        let name = item.name.replace(/\.[\w]*/, ''), path = item.path;
+                        if (!this.app.macOS) {
+                            if (!/\\$/.test(path)) {
+                                path += '\/'
+                            }
+                        } else {
+                            if (!/\/$/.test(path)) {
+                                path += '\/'
+                            }
+                        }
+                        console.log(path)
+                        this.app.csInterface.evalScript(`${action.name}('${path}')`);
+                    } else {
+                        this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
+                    }
                 }
+            } else if (this.app.appName == 'AEFT') {
+                console.log(`Doing ${action.name} on ${item.path}`)
+                this.app.csInterface.evalScript(`${action.name}('${item.path}')`);
             }
         },
         getActions(item) {
             let result = [];
             // If item is the current document in Application
-            if (item.path == this.doc.path) {
-                result.push({
-                    icon: 'save',
-                    name: 'exporter',
-                    tooltip: 'Quick export this file'
-                })
-            } else {
-                // If a folder
+            if (this.app.appName == 'ILST') {
 
-                if (item.children && !this.search) {
-                    //  
+                if (item.path == this.doc.path) {
                     result.push({
-                        icon: 'save_alt',
-                        name: 'quickExportSVG',
-                        tooltip: 'Export SVG to this folder',
+                        icon: 'save',
+                        name: 'exporter',
+                        tooltip: 'Quick export this file'
                     })
-                    if (!this.hasDocDescendent(item)) {
+                } else {
+                    // If a folder
+    
+                    if (item.children && !this.search) {
+                        //  
                         result.push({
-                            icon: 'save',
-                            name: 'quickSave',
-                            tooltip: 'Quicksave to this folder',
+                            icon: 'save_alt',
+                            name: 'quickExportSVG',
+                            tooltip: 'Export SVG to this folder',
+                        })
+                        if (!this.hasDocDescendent(item)) {
+                            result.push({
+                                icon: 'save',
+                                name: 'quickSave',
+                                tooltip: 'Quicksave to this folder',
+                            })
+                        }
+                    // If a specific file type
+                    } else if (item.ext == 'ai') {
+                        result.push({
+                            icon: 'mdi-open-in-app',
+                            name: 'openDoc',
+                            tooltip: 'Open document'
+                        })
+                    } else if (item.ext == 'jsx') {
+                        result.push({
+                            icon: 'edit',
+                            name: 'runScript',
+                            tooltip: 'Run this script'
                         })
                     }
-                // If a specific file type
-                } else if (item.ext == 'ai') {
+                    // If an asset or text
+                    if (/png|jpg/.test(item.ext)) {
+                        result.push({
+                            icon: 'mdi-plus',
+                            name: 'addImage',
+                            tooltip: 'Place image into document'
+                        })
+                    } else if (/svg/.test(item.ext)) {
+                        result.push({
+                            icon: 'mdi-plus',
+                            name: 'addSVG',
+                            tooltip: 'Add SVG to the document'
+                        })
+                    } else if (/txt|md/.test(item.ext)) {
+                        result.push({
+                            icon: 'mdi-clipboard-text-play',
+                            name: 'addText',
+                            tooltip: 'Place text into document'
+                        })
+                    }
+                }
+            // Else if After Effects 
+            } else if (this.app.appName == 'AEFT') {
+                if (item.path == this.doc.path) {
+                    result.push({
+                        icon: 'save',
+                        name: 'exporter',
+                        tooltip: 'Quick export this file'
+                    })
+                }
+                //  If a folder
+                if (item.children && !this.search) {
+                   
+                   
+
+                // Else if a specific file type
+                } else if (item.ext == 'mp4') {
                     result.push({
                         icon: 'mdi-open-in-app',
-                        name: 'openDoc',
-                        tooltip: 'Open document'
+                        name: 'importFile',
+                        tooltip: 'Add this file to project'
                     })
-                } else if (item.ext == 'jsx') {
+                } else if (item.ext == 'aep' && item.path !== this.doc.path) {
                     result.push({
-                        icon: 'edit',
-                        name: 'runScript',
-                        tooltip: 'Run this script'
+                        icon: 'save_alt',
+                        name: 'importComp',
+                        tooltip: 'Add this comp to project'
                     })
                 }
-                // If an asset or text
-                if (/png|jpg/.test(item.ext)) {
-                    result.push({
-                        icon: 'mdi-plus',
-                        name: 'addImage',
-                        tooltip: 'Place image into document'
-                    })
-                } else if (/svg/.test(item.ext)) {
-                    result.push({
-                        icon: 'mdi-plus',
-                        name: 'addSVG',
-                        tooltip: 'Add SVG to the document'
-                    })
-                } else if (/txt|md/.test(item.ext)) {
-                    result.push({
-                        icon: 'mdi-clipboard-text-play',
-                        name: 'addText',
-                        tooltip: 'Place text into document'
-                    })
-                }
-                
             }
             return result;
         },
@@ -663,12 +712,12 @@ export default {
 .theme--dark.v-text-field--solo-inverted.v-text-field--solo > .v-input__control > .v-input__slot {
     background-color: var(--color-input-idle);
     border: 1.35px solid var(--color-border);
-    border-radius: 20px;
+    border-radius: var(--input-border-radius);
 }
 
 .theme--dark.v-text-field--solo-inverted.v-text-field--solo.v-input--is-focused > .v-input__control > .v-input__slot {
     border: 1.35px solid var(--color-selection);
-    border-radius: 20px;
+    border-radius: var(--input-border-radius);
 }
 
 

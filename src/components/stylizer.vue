@@ -65,12 +65,15 @@ export default {
         },
         setGradientTheme(appSkin) {
             console.log('After Effects style changed.');
-            this.setCSS('color-bg', this.toHex(appSkin.panelBackgroundColor.color));
+            this.setCSS('color-bg', this.toHex(appSkin.panelBackgroundColor.color), -10);
+            this.setCSS('color-input-idle', this.toHex(appSkin.panelBackgroundColor.color, -20));
             this.setCSS('color-icon', this.toHex(appSkin.panelBackgroundColor.color, 30));
             this.setCSS('color-button-disabled', this.toHex(appSkin.panelBackgroundColor.color, 20));
-            this.setCSS('color-scrollbar', this.toHex(appSkin.panelBackgroundColor.color, -20));
-            this.setCSS('color-scrollbar-thumb', this.toHex(appSkin.panelBackgroundColor.color, 5));
-            this.setCSS('color-scrollbar-thumb-hover', this.toHex(appSkin.panelBackgroundColor.color, 10));
+            this.setCSS('color-scrollbar', this.toHex(appSkin.panelBackgroundColor.color, -5));
+            this.setCSS('color-scrollbar-thumb', this.toHex(appSkin.panelBackgroundColor.color, 18));
+            this.setCSS('color-scrollbar-thumb-hover', this.toHex(appSkin.panelBackgroundColor.color, 35));
+
+            this.setCSS('input-border-radius', '5px');
         },
         getCSS(prop) {
             return window.getComputedStyle(document.documentElement).getPropertyValue('--' + prop);
@@ -79,7 +82,7 @@ export default {
             document.documentElement.style.setProperty('--' + prop, data);
         },
         toHex(color, delta) {
-            console.log(color)
+            // console.log(color)
             function computeValue(value, delta) {
                 var computedValue = !isNaN(delta) ? value + delta : value;
                 if (computedValue < 0) {

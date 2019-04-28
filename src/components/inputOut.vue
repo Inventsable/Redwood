@@ -1,17 +1,17 @@
 <template>
     <v-layout v-if="isMounted">
-      <v-flex class="px-3" id="output" xs12 >
-        <v-text-field
-            ref="output"
-            v-model="output"
-            spellcheck="false"
-            :prepend-icon="getOutIcon()"
-            @click:prepend="getOutputContext()"
-            label="Output path"
-            :rules="[rules.outputlength, rules.isfolder, rules.hasfolder]"
-            @input="changeoutput()">
-        </v-text-field>
-			</v-flex>
+        <v-flex class="px-3" id="output" xs12 >
+            <v-text-field
+                ref="output"
+                v-model="output"
+                spellcheck="false"
+                :prepend-icon="getOutIcon()"
+                @click:prepend="getOutputContext()"
+                label="Output path"
+                :rules="[rules.outputlength, rules.isfolder, rules.hasfolder]"
+                @input="changeoutput()">
+            </v-text-field>
+        </v-flex>
     </v-layout>
 </template>
 

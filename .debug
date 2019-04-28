@@ -3,6 +3,7 @@
     <Extension Id="inv.redwood.panel">
         <HostList>
             <Host Name="ILST" Port="9080"/>
+            <Host Name="AEFT" Port="9081"/>
         </HostList>
     </Extension>
 </ExtensionList>

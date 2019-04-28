@@ -122,7 +122,7 @@ export default {
 
 <style>
 :root {
-  --color-bg: #323232;
+  --color-bg: #262626;
   --color-dark: #1f1f1f;
   --color-selection: #46a0f5;
   --color-disabled: #525252;
@@ -143,6 +143,10 @@ export default {
   --scrollbar-width: 14px;
   --scrollbar-thumb-width: 14px;
   --scrollbar-thumb-radius: 20px;
+
+  --input-border-radius: 20px;
+  background-color: var(--color-bg);
+  border: 2px solid var(--color-bg);
 }
 
 body::-webkit-scrollbar {
@@ -152,6 +156,11 @@ body::-webkit-scrollbar {
 
 #app::-webkit-scrollbar {
   display: block;
+}
+
+.theme--dark.application {
+  background: var(--color-bg);
+  color: var(--color-main);
 }
 
 .container {
