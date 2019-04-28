@@ -59,7 +59,12 @@ export default {
     }
   }),
   created() {
-    // console.log('App is created');
+    this.rootLocation = document.location.href;
+    if (window.localStorage.getItem('lastRoute')) {
+      this.lastRoute = window.localStorage.getItem('lastRoute');
+    } else {
+      window.localStorage.setItem('lastRoute', 'home');
+    }
   },
   mounted() {
     console.clear();
@@ -70,8 +75,8 @@ export default {
     this.appName = this.csInterface.hostEnvironment.appName;
     this.loadUniversalScripts();
     this.csInterface.addEventListener('console', this.consoler);
-
     this.doneLoading();
+    this.$router.push({name: this.lastRoute});
   },
   
   methods: {
