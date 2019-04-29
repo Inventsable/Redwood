@@ -75,6 +75,7 @@ export default {
     this.appName = this.csInterface.hostEnvironment.appName;
     this.loadUniversalScripts();
     this.csInterface.addEventListener('console', this.consoler);
+    this.$refs.stylizer.init();
     this.doneLoading();
     this.$router.push({name: this.lastRoute});
   },

@@ -7,6 +7,7 @@ export default {
     name: 'stylizer',
     data: () => ({
         theme: null,
+        isMounted: false,
     }),
     computed: {
         app() {
@@ -16,18 +17,18 @@ export default {
             return this.app.$refs.mainscreen;
         }
     },
-    created() {
-        console.log('Hello?')
-        console.log('Where are you?')
-    },
     mounted() {
-        this.init();
+        // this.init();
     },
     methods: {
         init() {
-            console.log('Stylizer mounted');
-            this.app.csInterface.addEventListener(this.app.csInterface.THEME_COLOR_CHANGED_EVENT, this.appThemeChanged);
-            this.appThemeChanged();
+            if (!this.isMounted) {
+                console.log('Stylizer mounted');
+                this.app.csInterface.addEventListener('com.adobe.csxs.events.ThemeColorChanged', this.appThemeChanged);
+                this.appThemeChanged();
+                this.isMounted = true;
+                console.log(this);
+            }
         },
         appThemeChanged(event) {
             const skinInfo = JSON.parse(window.__adobe_cep__.getHostEnvironment()).appSkinInfo;
@@ -35,7 +36,7 @@ export default {
         },
         findTheme(appSkin) {
             console.log(appSkin)
-            if (this.app.csInterface.hostEnvironment.appName !== 'AEFT') {
+            if (this.app.appName !== 'AEFT') {
                 if (appSkin.panelBackgroundColor.color.red > 230)
                     this.theme = 'lightest';
                 else if (appSkin.panelBackgroundColor.color.red > 170)
@@ -46,7 +47,7 @@ export default {
                     this.theme = 'darkest';
                 this.assignTheme();
                 // this.$root.updateStorage();
-            } else {
+            } else if (this.app.appName == 'AEFT') {
                 this.setGradientTheme(appSkin);
             }
         },
@@ -64,25 +65,19 @@ export default {
             // }
         },
         setGradientTheme(appSkin) {
-            console.log('After Effects style changed.');
-            this.setCSS('color-bg', this.toHex(appSkin.panelBackgroundColor.color), -10);
-            this.setCSS('color-input-idle', this.toHex(appSkin.panelBackgroundColor.color, -20));
-            this.setCSS('color-icon', this.toHex(appSkin.panelBackgroundColor.color, 30));
-            this.setCSS('color-button-disabled', this.toHex(appSkin.panelBackgroundColor.color, 20));
-            this.setCSS('color-scrollbar', this.toHex(appSkin.panelBackgroundColor.color, -5));
-            this.setCSS('color-scrollbar-thumb', this.toHex(appSkin.panelBackgroundColor.color, 18));
-            this.setCSS('color-scrollbar-thumb-hover', this.toHex(appSkin.panelBackgroundColor.color, 35));
+            console.log('Assigning colors to After Effects UI gradient');
+            this.app.setCSS('color-bg', this.toHex(appSkin.panelBackgroundColor.color), -10);
+            this.app.setCSS('color-dark', this.toHex(appSkin.panelBackgroundColor.color), -15);
+            this.app.setCSS('color-input-idle', this.toHex(appSkin.panelBackgroundColor.color, -12));
+            this.app.setCSS('color-icon', this.toHex(appSkin.panelBackgroundColor.color, 30));
+            this.app.setCSS('color-button-disabled', this.toHex(appSkin.panelBackgroundColor.color, 20));
+            this.app.setCSS('color-scrollbar', this.toHex(appSkin.panelBackgroundColor.color, -5));
+            this.app.setCSS('color-scrollbar-thumb', this.toHex(appSkin.panelBackgroundColor.color, 18));
+            this.app.setCSS('color-scrollbar-thumb-hover', this.toHex(appSkin.panelBackgroundColor.color, 35));
 
-            this.setCSS('input-border-radius', '5px');
-        },
-        getCSS(prop) {
-            return window.getComputedStyle(document.documentElement).getPropertyValue('--' + prop);
-        },
-        setCSS(prop, data) {
-            document.documentElement.style.setProperty('--' + prop, data);
+            this.app.setCSS('input-border-radius', '5px');
         },
         toHex(color, delta) {
-            // console.log(color)
             function computeValue(value, delta) {
                 var computedValue = !isNaN(delta) ? value + delta : value;
                 if (computedValue < 0) {
@@ -97,9 +92,7 @@ export default {
 
             var hex = "";
             if (color) {
-                // with (color) {
-                    hex = computeValue(color.red, delta) + computeValue(color.green, delta) + computeValue(color.blue, delta);
-                // };
+                hex = computeValue(color.red, delta) + computeValue(color.green, delta) + computeValue(color.blue, delta);
             }
             return "#" + hex;
         }

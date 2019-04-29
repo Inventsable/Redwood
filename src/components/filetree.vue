@@ -116,7 +116,9 @@ export default {
         ignores: [
             '.git', 
             'Adobe After Effects Auto-Save',
-            'node_modules'
+            'Adobe Premiere Pro Auto-Save',
+            'AnnoPreview_AME',
+            'node_modules',
         ],
         search: null,
         rx: {
@@ -537,7 +539,10 @@ export default {
         syncDirLength(path) {
             const self = this;
             this.timers.push(setInterval(() => {
-                self.dirLength = self.checkDirLength(0);
+
+                // !! Something is wrong with sync. Folders containing spaces are counted and throw off correct sync number
+                self.dirLength = self.checkDirLength(1);
+                // Should start at 0, otherwise triggers infinite update loop
                 console.log(`${self.dirLength} ?== ${self.itemLength}`)
                 if (self.dirLength !== self.itemLength) {
                     console.log(`Something has changed: dir length is ${self.dirLength} ?== item length is ${self.itemLength}`)
@@ -549,8 +554,8 @@ export default {
         checkDirChildren(list, root, count) {
             if (list) {
                 list.forEach(item => {
-                    count++;
                     if (!this.ignores.includes(item)) { 
+                        count++;
                         if (!window.cep.fs.readdir(root + item).err) {
                             count = this.checkDirChildren(window.cep.fs.readdir(root + item).data, root + item, count);
                         } else {
